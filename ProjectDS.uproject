@@ -1,0 +1,34 @@
+{
+	"FileVersion": 3,
+	"EngineAssociation": "{441FFDD9-41BC-09A5-7E00-7C8E053ADCB5}",
+	"Category": "",
+	"Description": "",
+	"Modules": [
+		{
+			"Name": "ProjectDS",
+			"Type": "Runtime",
+			"LoadingPhase": "Default",
+			"AdditionalDependencies": [
+				"ProjectDSFramework"
+			]
+		},
+		{
+			"Name": "ProjectDSFramework",
+			"Type": "Runtime",
+			"LoadingPhase": "Default",
+			"AdditionalDependencies": [
+				"Engine"
+			]
+		},
+		{
+			"Name": "ProjectDSUI",
+			"Type": "ClientOnly",
+			"LoadingPhase": "Default",
+			"AdditionalDependencies": [
+				"Engine",
+				"ProjectDSFramework",
+				"UMG"
+			]
+		}
+	]
+}
