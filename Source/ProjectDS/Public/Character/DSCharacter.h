@@ -13,7 +13,7 @@ class PROJECTDS_API ADSCharacter : public ADSCharacterBase
 
 public:
 	// Sets default values for this character's properties
-	ADSCharacter();
+	ADSCharacter(const FObjectInitializer& ObjectInitializer);
 
 protected:
 	// Called when the game starts or when spawned

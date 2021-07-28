@@ -13,7 +13,7 @@ class PROJECTDSFRAMEWORK_API ADSCharacterBase : public ACharacter
 
 public:
 	// Sets default values for this character's properties
-	ADSCharacterBase();
+	ADSCharacterBase(const FObjectInitializer& ObjectInitializer);
 
 protected:
 	// Called when the game starts or when spawned
@@ -25,5 +25,22 @@ public:
 
 	// Called to bind functionality to input
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
+
+protected:
+	void MoveForward(float Value);
+	void MoveRight(float Value);
+	void Turn(float Value);
+	void LookUp(float Value);
+
+public:
+	static FName SpringArmComponentName;
+	static FName CameraComponentName;
+
+protected:
+	UPROPERTY(EditAnywhere)
+	class USpringArmComponent* SpringArm;
+
+	UPROPERTY(EditAnywhere)
+	class UCameraComponent* Camera;
 
 };
