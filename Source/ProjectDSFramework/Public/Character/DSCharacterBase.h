@@ -27,14 +27,33 @@ public:
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
 protected:
+	void SetSprinting(bool bSprint);
+
+protected:
 	void MoveForward(float Value);
 	void MoveRight(float Value);
 	void Turn(float Value);
 	void LookUp(float Value);
 
+	void StartJump();
+	void EndJump();
+	void Sprint(bool bSprint);
+	void ToggleCrouch();
+
+	// {{ Input binding delegates
+	DECLARE_DELEGATE_OneParam(FActionInputDelegate, bool);
+	// }} Input binding delegates
+
+private:
+	UFUNCTION(Server, WithValidation, Reliable)
+	void ServerSetSprint(bool bSprint);
+
 public:
 	static FName SpringArmComponentName;
 	static FName CameraComponentName;
+
+private:
+	uint8 bCrouching : 1;
 
 protected:
 	UPROPERTY(EditAnywhere)

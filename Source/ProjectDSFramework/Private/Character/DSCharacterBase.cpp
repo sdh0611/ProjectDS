@@ -31,6 +31,7 @@ ADSCharacterBase::ADSCharacterBase(const FObjectInitializer& ObjectInitializer)
 		}
 	}
 
+	bCrouching = false;
 }
 
 // Called when the game starts or when spawned
@@ -58,8 +59,23 @@ void ADSCharacterBase::SetupPlayerInputComponent(UInputComponent* PlayerInputCom
 		PlayerInputComponent->BindAxis(TEXT("MoveRight"), this, &ADSCharacterBase::MoveRight);
 		PlayerInputComponent->BindAxis(TEXT("Turn"), this, &ADSCharacterBase::Turn);
 		PlayerInputComponent->BindAxis(TEXT("LookUp"), this, &ADSCharacterBase::LookUp);
+
+		PlayerInputComponent->BindAction(TEXT("Jump"), EInputEvent::IE_Pressed, this, &ADSCharacterBase::StartJump);
+		PlayerInputComponent->BindAction(TEXT("Jump"), EInputEvent::IE_Released, this, &ADSCharacterBase::EndJump);
+		PlayerInputComponent->BindAction(TEXT("Crouch"), EInputEvent::IE_Pressed, this, &ADSCharacterBase::ToggleCrouch);
+		PlayerInputComponent->BindAction<FActionInputDelegate>(TEXT("Sprint"), EInputEvent::IE_Pressed, this, &ADSCharacterBase::Sprint, true);
+		PlayerInputComponent->BindAction<FActionInputDelegate>(TEXT("Sprint"), EInputEvent::IE_Released, this, &ADSCharacterBase::Sprint, false);
 	}
 
+}
+
+void ADSCharacterBase::SetSprinting(bool bSprint)
+{
+	UDSCharacterMovementComponent* DSMove = Cast<UDSCharacterMovementComponent>(GetCharacterMovement());
+	if (DSMove)
+	{
+		DSMove->SetSprinting(bSprint);
+	}
 }
 
 void ADSCharacterBase::MoveForward(float Value)
@@ -90,5 +106,62 @@ void ADSCharacterBase::Turn(float Value)
 void ADSCharacterBase::LookUp(float Value)
 {
 	AddControllerPitchInput(Value);
+}
+
+void ADSCharacterBase::StartJump()
+{
+	if (!bPressedJump)
+	{
+		Jump();
+	}
+}
+
+void ADSCharacterBase::EndJump()
+{
+	StopJumping();
+}
+
+void ADSCharacterBase::Sprint(bool bSprint)
+{
+	SetSprinting(bSprint);
+	if (IsNetMode(NM_Client))
+	{
+		if (IsValid(SpringArm))
+		{
+			if (bSprint)
+			{
+				SpringArm->CameraLagMaxDistance += 100.f;
+			}
+			else
+			{
+				SpringArm->CameraLagMaxDistance -= 100.f;
+			}
+		}
+		ServerSetSprint(bSprint);
+	}
+}
+
+void ADSCharacterBase::ToggleCrouch()
+{
+	bCrouching = !bCrouching;
+	if (bCrouching)
+	{
+		Sprint(false);
+		Crouch();
+	}
+	else
+	{
+		UnCrouch();
+	}
+}
+
+bool ADSCharacterBase::ServerSetSprint_Validate(bool bSprint)
+{
+	return true;
+}
+
+void ADSCharacterBase::ServerSetSprint_Implementation(bool bSprint)
+{
+	SetSprinting(bSprint);
 }
 
