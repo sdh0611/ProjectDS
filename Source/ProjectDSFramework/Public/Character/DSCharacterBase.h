@@ -6,6 +6,8 @@
 #include "GameFramework/Character.h"
 #include "DSCharacterBase.generated.h"
 
+class UDSCharacterMovementComponent;
+
 UCLASS()
 class PROJECTDSFRAMEWORK_API ADSCharacterBase : public ACharacter
 {
@@ -20,11 +22,15 @@ protected:
 	virtual void BeginPlay() override;
 
 public:	
+	virtual void PostInitializeComponents() override;
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 
 	// Called to bind functionality to input
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
+
+public:
+	UDSCharacterMovementComponent* GetDSCharacterMovement() const { return DSMovement; }
 
 protected:
 	void SetSprinting(bool bSprint);
@@ -44,16 +50,12 @@ protected:
 	DECLARE_DELEGATE_OneParam(FActionInputDelegate, bool);
 	// }} Input binding delegates
 
-private:
-	UFUNCTION(Server, WithValidation, Reliable)
-	void ServerSetSprint(bool bSprint);
+public:
+	bool IsSprinting() const;
 
 public:
 	static FName SpringArmComponentName;
 	static FName CameraComponentName;
-
-private:
-	uint8 bCrouching : 1;
 
 protected:
 	UPROPERTY(EditAnywhere)
@@ -61,5 +63,8 @@ protected:
 
 	UPROPERTY(EditAnywhere)
 	class UCameraComponent* Camera;
+
+	UPROPERTY(Transient)
+	class UDSCharacterMovementComponent* DSMovement;
 
 };
