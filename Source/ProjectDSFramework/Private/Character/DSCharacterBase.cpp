@@ -31,7 +31,6 @@ ADSCharacterBase::ADSCharacterBase(const FObjectInitializer& ObjectInitializer)
 		}
 	}
 
-	bCrouching = false;
 }
 
 // Called when the game starts or when spawned
@@ -39,6 +38,18 @@ void ADSCharacterBase::BeginPlay()
 {
 	Super::BeginPlay();
 	
+}
+
+void ADSCharacterBase::PostInitializeComponents()
+{
+	Super::PostInitializeComponents();
+
+	UDSCharacterMovementComponent* NewDSMovement = Cast<UDSCharacterMovementComponent>(GetCharacterMovement());
+	if (NewDSMovement)
+	{
+		DSMovement = NewDSMovement;
+	}
+
 }
 
 // Called every frame
@@ -71,10 +82,16 @@ void ADSCharacterBase::SetupPlayerInputComponent(UInputComponent* PlayerInputCom
 
 void ADSCharacterBase::SetSprinting(bool bSprint)
 {
-	UDSCharacterMovementComponent* DSMove = Cast<UDSCharacterMovementComponent>(GetCharacterMovement());
-	if (DSMove)
+	if (IsValid(DSMovement))
 	{
-		DSMove->SetSprinting(bSprint);
+		if (HasAuthority())
+		{
+			DSMovement->SetSprinting(bSprint);
+		}
+		else
+		{
+			DSMovement->DoSprint(bSprint);
+		}
 	}
 }
 
@@ -113,6 +130,10 @@ void ADSCharacterBase::StartJump()
 	if (!bPressedJump)
 	{
 		Jump();
+		if (IsValid(DSMovement))
+		{
+			DSMovement->bOrientRotationToMovement = false;
+		}
 	}
 }
 
@@ -123,28 +144,29 @@ void ADSCharacterBase::EndJump()
 
 void ADSCharacterBase::Sprint(bool bSprint)
 {
-	SetSprinting(bSprint);
-	if (IsNetMode(NM_Client))
+	if (!bIsCrouched)
 	{
-		if (IsValid(SpringArm))
+		SetSprinting(bSprint);
+		if (IsNetMode(NM_Client))
 		{
-			if (bSprint)
+			if (IsValid(SpringArm))
 			{
-				SpringArm->CameraLagMaxDistance += 100.f;
-			}
-			else
-			{
-				SpringArm->CameraLagMaxDistance -= 100.f;
+				if (bSprint)
+				{
+					SpringArm->CameraLagMaxDistance += 100.f;
+				}
+				else
+				{
+					SpringArm->CameraLagMaxDistance -= 100.f;
+				}
 			}
 		}
-		ServerSetSprint(bSprint);
 	}
 }
 
 void ADSCharacterBase::ToggleCrouch()
 {
-	bCrouching = !bCrouching;
-	if (bCrouching)
+	if (!bIsCrouched)
 	{
 		Sprint(false);
 		Crouch();
@@ -155,13 +177,12 @@ void ADSCharacterBase::ToggleCrouch()
 	}
 }
 
-bool ADSCharacterBase::ServerSetSprint_Validate(bool bSprint)
+bool ADSCharacterBase::IsSprinting() const
 {
-	return true;
-}
+	if (IsValid(DSMovement))
+	{
+		return DSMovement->IsSprinting();
+	}
 
-void ADSCharacterBase::ServerSetSprint_Implementation(bool bSprint)
-{
-	SetSprinting(bSprint);
+	return false;
 }
-
