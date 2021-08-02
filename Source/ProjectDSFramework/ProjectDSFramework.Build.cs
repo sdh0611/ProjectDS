@@ -17,6 +17,7 @@ public class ProjectDSFramework : ModuleRules
             {
                 "ProjectDSFramework/Public",
                 "ProjectDSFramework/Public/Character",
+                "ProjectDSFramework/Public/Character/Anim",
                 "ProjectDSFramework/Public/Game",
                 "ProjectDSFramework/Public/Player",
             }
