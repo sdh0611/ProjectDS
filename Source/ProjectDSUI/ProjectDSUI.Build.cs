@@ -18,6 +18,7 @@ public class ProjectDSUI : ModuleRules
                             "ProjectDSUI/Public",
                             "ProjectDSFramework/Public",
                             "ProjectDSFramework/Public/Character",
+                            "ProjectDSFramework/Public/Character/Inventory",
                             "ProjectDSFramework/Public/Game",
                             "ProjectDSFramework/Public/Player",
                     }

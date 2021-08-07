@@ -8,9 +8,10 @@
 UDSCharacterAnimInstance::UDSCharacterAnimInstance()
 {
 	bCrouching = false;
-	bSprinting = false;
 	bFalling = false;
 	bAccel = false;
+	bArmed = false;
+
 	CurrentSpeed2D = 0.f;
 	RunAnimPlayRate = 1.f;
 	SpeedThresholdToCalcRunAnimPlayRate = 300.f;
@@ -35,6 +36,8 @@ void UDSCharacterAnimInstance::NativeUpdateAnimation(float DeltaSeconds)
 			bCrouching = DSMovement->IsCrouching();
 			bFalling = DSMovement->IsFalling();
 			bAccel = (DSMovement->GetCurrentAcceleration().SizeSquared2D() > 0.f);
+			bArmed = DSCharacter->IsArmed();
+
 			CurrentSpeed2D = DSMovement->Velocity.Size2D();
 			if (CurrentSpeed2D > SpeedThresholdToCalcRunAnimPlayRate)
 			{

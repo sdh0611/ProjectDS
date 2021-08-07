@@ -33,13 +33,13 @@ public:
 	uint8 bCrouching : 1;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
-	uint8 bSprinting : 1;
-
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
 	uint8 bFalling : 1;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
 	uint8 bAccel : 1;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
+	uint8 bArmed : 1;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
 	float CurrentSpeed2D;

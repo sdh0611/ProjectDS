@@ -7,6 +7,7 @@
 #include "DSCharacterBase.generated.h"
 
 class UDSCharacterMovementComponent;
+class ADSWeapon;
 
 UCLASS()
 class PROJECTDSFRAMEWORK_API ADSCharacterBase : public ACharacter
@@ -30,7 +31,13 @@ public:
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
 public:
-	UDSCharacterMovementComponent* GetDSCharacterMovement() const { return DSMovement; }
+	FORCEINLINE UDSCharacterMovementComponent* GetDSCharacterMovement() const { return DSMovement; }
+	FORCEINLINE ADSWeapon* GetCurrentWeapon() const { return CurrentWeapon; }
+	bool IsArmed() const;
+	bool IsSprinting() const;
+
+public:
+	float PlayMontage(class UAnimMontage* MontageToPlay, float PlayRate = 1.f, float StartPosition = 0.f, bool bStopAllMontage = false, float BlendOutTime = 0.f);
 
 protected:
 	void SetSprinting(bool bSprint);
@@ -45,17 +52,34 @@ protected:
 	void EndJump();
 	void Sprint(bool bSprint);
 	void ToggleCrouch();
+	void ToggleWeapon();
 
+protected:
+	virtual void EquipWeapon(ADSWeapon* Equipped);
+	virtual void UnequipWeapon();
+	void ActivateWeapon();
+	void DeactivateWeapon();
+
+public:
+	static FName SpringArmComponentName;
+	static FName CameraComponentName;
+
+protected:
 	// {{ Input binding delegates
 	DECLARE_DELEGATE_OneParam(FActionInputDelegate, bool);
 	// }} Input binding delegates
 
 public:
-	bool IsSprinting() const;
+	// For weapon test
+	UPROPERTY(EditDefaultsOnly)
+	TSubclassOf<ADSWeapon> TestWeaponClass;
 
-public:
-	static FName SpringArmComponentName;
-	static FName CameraComponentName;
+protected:
+	UPROPERTY(VisibleAnywhere, Category=Inventory)
+	ADSWeapon* CurrentWeapon;
+
+	UPROPERTY()
+	class UDSCharacterAnimInstance* DSAnimInstance;
 
 protected:
 	UPROPERTY(EditAnywhere)

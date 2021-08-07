@@ -8,6 +8,8 @@
 #include "GameFramework/SpringArmComponent.h"
 #include "Camera/CameraComponent.h"
 #include "DSPlayerControllerBase.h"
+#include "DSWeapon.h"
+#include "DSCharacterAnimInstance.h"
 
 FName ADSCharacterBase::SpringArmComponentName = TEXT("SpringArm");
 FName ADSCharacterBase::CameraComponentName = TEXT("Camera");
@@ -38,6 +40,22 @@ void ADSCharacterBase::BeginPlay()
 {
 	Super::BeginPlay();
 	
+	// For test weapon 
+	if (TestWeaponClass && GetWorld())
+	{
+		ADSWeapon* TestWeapon = nullptr;
+		FActorSpawnParameters WeaponSpawnParams;
+		WeaponSpawnParams.Instigator = this;
+		WeaponSpawnParams.Owner = this;
+		WeaponSpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+		TestWeapon = GetWorld()->SpawnActor<ADSWeapon>(TestWeaponClass, WeaponSpawnParams);
+		if (TestWeapon)
+		{
+			TestWeapon->GivenTo(this);
+			EquipWeapon(TestWeapon);
+		}
+	}
+
 }
 
 void ADSCharacterBase::PostInitializeComponents()
@@ -48,6 +66,15 @@ void ADSCharacterBase::PostInitializeComponents()
 	if (NewDSMovement)
 	{
 		DSMovement = NewDSMovement;
+	}
+
+	if (GetMesh())
+	{
+		UDSCharacterAnimInstance* NewAnim = Cast<UDSCharacterAnimInstance>(GetMesh()->GetAnimInstance());
+		if (NewAnim)
+		{
+			DSAnimInstance = NewAnim;
+		}
 	}
 
 }
@@ -74,6 +101,7 @@ void ADSCharacterBase::SetupPlayerInputComponent(UInputComponent* PlayerInputCom
 		PlayerInputComponent->BindAction(TEXT("Jump"), EInputEvent::IE_Pressed, this, &ADSCharacterBase::StartJump);
 		PlayerInputComponent->BindAction(TEXT("Jump"), EInputEvent::IE_Released, this, &ADSCharacterBase::EndJump);
 		PlayerInputComponent->BindAction(TEXT("Crouch"), EInputEvent::IE_Pressed, this, &ADSCharacterBase::ToggleCrouch);
+		PlayerInputComponent->BindAction(TEXT("ToggleWeapon"), EInputEvent::IE_Pressed, this, &ADSCharacterBase::ToggleWeapon);
 		PlayerInputComponent->BindAction<FActionInputDelegate>(TEXT("Sprint"), EInputEvent::IE_Pressed, this, &ADSCharacterBase::Sprint, true);
 		PlayerInputComponent->BindAction<FActionInputDelegate>(TEXT("Sprint"), EInputEvent::IE_Released, this, &ADSCharacterBase::Sprint, false);
 	}
@@ -177,6 +205,70 @@ void ADSCharacterBase::ToggleCrouch()
 	}
 }
 
+void ADSCharacterBase::ToggleWeapon()
+{
+	if (IsValid(GetDSCharacterMovement()) && !GetDSCharacterMovement()->IsFalling())
+	{
+		if (IsValid(CurrentWeapon) && CurrentWeapon->IsEquipped())
+		{
+			if (CurrentWeapon->IsWeaponActive())
+			{
+				DeactivateWeapon();
+			}
+			else
+			{
+				ActivateWeapon();
+			}
+		}
+	}
+}
+
+void ADSCharacterBase::EquipWeapon(ADSWeapon * Equipped)
+{
+	if (IsValid(Equipped))
+	{
+		// Unequip current weapon
+		UnequipWeapon();
+
+		// Equip new weapon
+		Equipped->Equipped(this);
+		CurrentWeapon = Equipped;
+		ActivateWeapon();
+	}
+}
+
+void ADSCharacterBase::UnequipWeapon()
+{
+	if (IsValid(CurrentWeapon))
+	{
+		CurrentWeapon->Unequipped();
+		CurrentWeapon = nullptr;
+	}
+}
+
+void ADSCharacterBase::ActivateWeapon()
+{
+	if (IsValid(CurrentWeapon))
+	{
+		// Activate weapon
+		CurrentWeapon->WeaponActivated();
+	}
+}
+
+void ADSCharacterBase::DeactivateWeapon()
+{
+	if (IsValid(CurrentWeapon))
+	{
+		// Deactivate weapon
+		CurrentWeapon->WeaponDeactivated();
+	}
+}
+
+bool ADSCharacterBase::IsArmed() const
+{
+	return IsValid(CurrentWeapon) && CurrentWeapon->IsWeaponActive();
+}
+
 bool ADSCharacterBase::IsSprinting() const
 {
 	if (IsValid(DSMovement))
@@ -185,4 +277,20 @@ bool ADSCharacterBase::IsSprinting() const
 	}
 
 	return false;
+}
+
+float ADSCharacterBase::PlayMontage(UAnimMontage * MontageToPlay, float PlayRate, float StartPosition, bool bStopAllMontage, float BlendOutTime)
+{
+	float PlayMontageLength = 0.f;
+	if (IsValid(DSAnimInstance) && MontageToPlay)
+	{
+		if (bStopAllMontage)
+		{
+			DSAnimInstance->StopAllMontages(BlendOutTime);
+		}
+
+		PlayMontageLength = DSAnimInstance->Montage_Play(MontageToPlay, PlayRate, EMontagePlayReturnType::MontageLength, StartPosition);
+	}
+
+	return PlayMontageLength;
 }
