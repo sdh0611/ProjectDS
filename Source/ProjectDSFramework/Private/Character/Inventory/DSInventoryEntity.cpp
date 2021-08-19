@@ -3,13 +3,14 @@
 
 #include "DSInventoryEntity.h"
 #include "DSCharacterBase.h"
+#include "Net/UnrealNetwork.h"
 
 // Sets default values
 ADSInventoryEntity::ADSInventoryEntity()
 {
  	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = false;
-
+	bReplicates = false;
 }
 
 // Called when the game starts or when spawned
@@ -17,6 +18,13 @@ void ADSInventoryEntity::BeginPlay()
 {
 	Super::BeginPlay();
 	
+}
+
+void ADSInventoryEntity::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+
+	DOREPLIFETIME(ADSInventoryEntity, OwnerCharacter);
 }
 
 void ADSInventoryEntity::GivenTo(ADSCharacterBase * NewOwner)

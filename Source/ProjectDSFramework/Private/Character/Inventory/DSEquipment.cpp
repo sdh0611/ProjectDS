@@ -3,7 +3,9 @@
 
 #include "DSEquipment.h"
 #include "Components/StaticMeshComponent.h"
+#include "Components/SkeletalMeshComponent.h"
 #include "DSCharacterBase.h"
+#include "Net/UnrealNetwork.h"
 
 FName ADSEquipment::BodyMeshName = TEXT("BodyMesh");
 
@@ -16,23 +18,110 @@ ADSEquipment::ADSEquipment()
 	}
 
 	bEquipped = false;
+	bReplicates = true;
 }
 
 void ADSEquipment::BeginPlay()
 {
 	Super::BeginPlay();
 
+	//SetActorHiddenInGame(true);
 }
 
-void ADSEquipment::Equipped(ADSCharacterBase * EquipCharacter)
+void ADSEquipment::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
-	if (IsValid(EquipCharacter))
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+
+	//DOREPLIFETIME_CONDITION(ADSEquipment, bEquipped, COND_OwnerOnly);
+	DOREPLIFETIME(ADSEquipment, bEquipped);
+}
+
+void ADSEquipment::PostNetReceive()
+{
+	Super::PostNetReceive();
+
+	//if (!IsHidden())
+	//{
+		//SetActorHiddenInGame(IsHidden());
+		//MarkComponentsRenderStateDirty();
+	//}
+
+}
+
+void ADSEquipment::Equipped()
+{
+	if (!IsEquipped())
 	{
-		bEquipped = true;
+		InternalEquipped();
+		if (!IsNetMode(NM_DedicatedServer))
+		{
+			OnEquipped();
+		}
 	}
 }
 
 void ADSEquipment::Unequipped()
 {
+	if (IsEquipped())
+	{
+		InternalUnequipped();
+		if (!IsNetMode(NM_DedicatedServer))
+		{
+			OnUnequipped();
+		}
+	}
+}
+
+void ADSEquipment::GivenTo(ADSCharacterBase * NewOwner)
+{
+	Super::GivenTo(NewOwner);
+
+	Unequipped();
+}
+
+void ADSEquipment::InternalEquipped()
+{
+	bEquipped = true;
+	SetActorHiddenInGame(false);
+}
+
+void ADSEquipment::InternalUnequipped()
+{
 	bEquipped = false;
+	SetActorHiddenInGame(true);
+}
+
+void ADSEquipment::OnEquipped()
+{
+	AttachToCharacter(AttachSocketName);
+}
+
+void ADSEquipment::OnUnequipped()
+{
+	DetachFromCharacter();
+}
+
+void ADSEquipment::AttachToCharacter(const FName & AttackSocketName)
+{
+	if (OwnerCharacter.IsValid() && OwnerCharacter->GetMesh())
+	{
+		AttachToComponent(OwnerCharacter->GetMesh(), FAttachmentTransformRules::SnapToTargetNotIncludingScale, AttackSocketName);
+	}
+}
+
+void ADSEquipment::DetachFromCharacter()
+{
+	DetachFromActor(FDetachmentTransformRules::KeepWorldTransform);
+}
+
+void ADSEquipment::OnRep_Equipped()
+{
+	if (bEquipped)
+	{
+		OnEquipped();
+	}
+	else
+	{
+		OnUnequipped();
+	}
 }

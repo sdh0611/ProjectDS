@@ -46,28 +46,38 @@ protected:
 	virtual void BeginPlay() override;
 
 public:
+	/** Returns the properties used for network replication, this needs to be overridden by all actor classes with native replicated properties */
+	void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
+	/**
+	 * Called on the actor right before replication occurs.
+	 * Only called on Server, and for autonomous proxies if recording a Client Replay.
+	 */
+	virtual void PreReplication(IRepChangedPropertyTracker & ChangedPropertyTracker) override;
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 
 public:
-	virtual void Equipped(ADSCharacterBase* EquipCharacter) override;
-	virtual void Unequipped() override;
-
-public:
-	void WeaponActivated();
-	void WeaponDeactivated();
-
-public:
-	bool IsWeaponActive() const { return bWeaponActive; }
+	virtual bool CanAttack() const { return IsEquipped(); }
+	virtual void DoAttack() { }
 
 protected:
-	void AttachWeapon();
-	void DetachWeapon();
+	virtual void InternalUpdateWeapon(float DeltaTime);
+	virtual void InternalEquipped() override;
+	virtual void InternalUnequipped() override;
 
 public:
-	UPROPERTY(EditDefaultsOnly)
-	FName AttachSocketNameOnActivated;
+	void WeaponArmed();
+	void WeaponUnarmed(bool bPlayAnim = true);
+	
+public:
+	void SetWeaponArmed(bool bIsArmed);
+	bool IsWeaponArmed() const { return bWeaponArmed; }
 
+protected:
+	UFUNCTION()
+	virtual void OnRep_WeaponArmed();
+
+public:
 	UPROPERTY(EditDefaultsOnly)
 	FName AttachSocketNameOnDeactivated;
 
@@ -79,6 +89,7 @@ protected:
 	UAnimMontage* UnequipAnim;
 
 protected:
-	uint8 bWeaponActive : 1;
+	UPROPERTY(Transient, ReplicatedUsing=OnRep_WeaponArmed)
+	uint8 bWeaponArmed: 1;
 
 };

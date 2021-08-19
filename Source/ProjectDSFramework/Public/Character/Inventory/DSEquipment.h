@@ -23,21 +23,44 @@ protected:
 	virtual void BeginPlay() override;
 
 public:
-	virtual void Equipped(ADSCharacterBase* EquipCharacter);
-	virtual void Unequipped();
+	/** Returns the properties used for network replication, this needs to be overridden by all actor classes with native replicated properties */
+	void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
+	/** Always called immediately after properties are received from the remote. */
+	virtual void PostNetReceive() override;
+	virtual void GivenTo(ADSCharacterBase* NewOwner) override;
+	void Equipped();
+	void Unequipped();
+
+protected:
+	virtual void InternalEquipped();
+	virtual void InternalUnequipped();
+	virtual void OnEquipped();
+	virtual void OnUnequipped();
 
 public:
 	UStaticMeshComponent* GetBodyMesh() const { return BodyMesh; }
 	bool IsEquipped() const { return bEquipped; }
 
 public:
+	void AttachToCharacter(const FName& AttackSocketName);
+	void DetachFromCharacter();
+
+	UFUNCTION()
+	virtual void OnRep_Equipped();
+
+public:
 	static FName BodyMeshName;
+
+public:
+	UPROPERTY(EditDefaultsOnly)
+	FName AttachSocketName;
 
 protected:
 	UPROPERTY(VisibleDefaultsOnly)
 	UStaticMeshComponent* BodyMesh;
 
-protected:
+private:
+	UPROPERTY(Transient, ReplicatedUsing=OnRep_Equipped)
 	uint8 bEquipped : 1;
 	
 };

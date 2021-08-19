@@ -22,10 +22,15 @@ protected:
 	virtual void BeginPlay() override;
 
 public:
+	/** Returns the properties used for network replication, this needs to be overridden by all actor classes with native replicated properties */
+	void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
+
+public:
 	virtual void GivenTo(ADSCharacterBase* NewOwner);
 	ADSCharacterBase* GetInventoryEntityOwner() { return OwnerCharacter.Get(); }
 
 protected:
+	UPROPERTY(Replicated)
 	TWeakObjectPtr<ADSCharacterBase> OwnerCharacter;
 
 };

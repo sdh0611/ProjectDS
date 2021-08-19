@@ -10,6 +10,7 @@
 #include "DSPlayerControllerBase.h"
 #include "DSWeapon.h"
 #include "DSCharacterAnimInstance.h"
+#include "Net/UnrealNetwork.h"
 
 FName ADSCharacterBase::SpringArmComponentName = TEXT("SpringArm");
 FName ADSCharacterBase::CameraComponentName = TEXT("Camera");
@@ -33,6 +34,7 @@ ADSCharacterBase::ADSCharacterBase(const FObjectInitializer& ObjectInitializer)
 		}
 	}
 
+	ActiveMoveInputFlag = EActiveMoveInputFlag::InputAll;
 }
 
 // Called when the game starts or when spawned
@@ -40,8 +42,8 @@ void ADSCharacterBase::BeginPlay()
 {
 	Super::BeginPlay();
 	
-	// For test weapon 
-	if (TestWeaponClass && GetWorld())
+	// {{ Begin test weapon 
+	if (HasAuthority() && TestWeaponClass && GetWorld())
 	{
 		ADSWeapon* TestWeapon = nullptr;
 		FActorSpawnParameters WeaponSpawnParams;
@@ -55,6 +57,7 @@ void ADSCharacterBase::BeginPlay()
 			EquipWeapon(TestWeapon);
 		}
 	}
+	//}} End test weapon 
 
 }
 
@@ -102,10 +105,19 @@ void ADSCharacterBase::SetupPlayerInputComponent(UInputComponent* PlayerInputCom
 		PlayerInputComponent->BindAction(TEXT("Jump"), EInputEvent::IE_Released, this, &ADSCharacterBase::EndJump);
 		PlayerInputComponent->BindAction(TEXT("Crouch"), EInputEvent::IE_Pressed, this, &ADSCharacterBase::ToggleCrouch);
 		PlayerInputComponent->BindAction(TEXT("ToggleWeapon"), EInputEvent::IE_Pressed, this, &ADSCharacterBase::ToggleWeapon);
+		PlayerInputComponent->BindAction(TEXT("Attack"), EInputEvent::IE_Pressed, this, &ADSCharacterBase::Attack);
 		PlayerInputComponent->BindAction<FActionInputDelegate>(TEXT("Sprint"), EInputEvent::IE_Pressed, this, &ADSCharacterBase::Sprint, true);
 		PlayerInputComponent->BindAction<FActionInputDelegate>(TEXT("Sprint"), EInputEvent::IE_Released, this, &ADSCharacterBase::Sprint, false);
 	}
 
+}
+
+void ADSCharacterBase::Falling()
+{
+	Super::Falling();
+	
+	const uint16 InputFlagToDIsable = (EActiveMoveInputFlag::InputJump | EActiveMoveInputFlag::InputEquipWeapon);
+	DisableMoveInput(InputFlagToDIsable);
 }
 
 void ADSCharacterBase::SetSprinting(bool bSprint)
@@ -155,7 +167,7 @@ void ADSCharacterBase::LookUp(float Value)
 
 void ADSCharacterBase::StartJump()
 {
-	if (!bPressedJump)
+	if (IsMoveInputAllowed(EActiveMoveInputFlag::InputJump) && !bPressedJump)
 	{
 		Jump();
 		if (IsValid(DSMovement))
@@ -172,7 +184,7 @@ void ADSCharacterBase::EndJump()
 
 void ADSCharacterBase::Sprint(bool bSprint)
 {
-	if (!bIsCrouched)
+	if (IsMoveInputAllowed(EActiveMoveInputFlag::InputSprint))
 	{
 		SetSprinting(bSprint);
 		if (IsNetMode(NM_Client))
@@ -207,18 +219,29 @@ void ADSCharacterBase::ToggleCrouch()
 
 void ADSCharacterBase::ToggleWeapon()
 {
-	if (IsValid(GetDSCharacterMovement()) && !GetDSCharacterMovement()->IsFalling())
+	if (IsMoveInputAllowed(EActiveMoveInputFlag::InputEquipWeapon))
 	{
 		if (IsValid(CurrentWeapon) && CurrentWeapon->IsEquipped())
 		{
-			if (CurrentWeapon->IsWeaponActive())
+			if (HasAuthority())
 			{
-				DeactivateWeapon();
+				CurrentWeapon->SetWeaponArmed(!CurrentWeapon->IsWeaponArmed());
 			}
 			else
 			{
-				ActivateWeapon();
+				ServerToggleWeapon();
 			}
+		}
+	}
+}
+
+void ADSCharacterBase::Attack()
+{
+	if (IsMoveInputAllowed(EActiveMoveInputFlag::InputAttack))
+	{
+		if (IsValid(CurrentWeapon) && CurrentWeapon->CanAttack())
+		{
+			CurrentWeapon->DoAttack();
 		}
 	}
 }
@@ -231,9 +254,9 @@ void ADSCharacterBase::EquipWeapon(ADSWeapon * Equipped)
 		UnequipWeapon();
 
 		// Equip new weapon
-		Equipped->Equipped(this);
+		Equipped->Equipped();
 		CurrentWeapon = Equipped;
-		ActivateWeapon();
+		ArmWeapon();
 	}
 }
 
@@ -246,27 +269,47 @@ void ADSCharacterBase::UnequipWeapon()
 	}
 }
 
-void ADSCharacterBase::ActivateWeapon()
+void ADSCharacterBase::ArmWeapon()
 {
 	if (IsValid(CurrentWeapon))
 	{
 		// Activate weapon
-		CurrentWeapon->WeaponActivated();
+		CurrentWeapon->WeaponArmed();
 	}
 }
 
-void ADSCharacterBase::DeactivateWeapon()
+void ADSCharacterBase::UnarmWeapon()
 {
 	if (IsValid(CurrentWeapon))
 	{
-		// Deactivate weapon
-		CurrentWeapon->WeaponDeactivated();
+		// Unarmed weapon
+		CurrentWeapon->WeaponUnarmed();
 	}
+}
+
+void ADSCharacterBase::OnRep_CurrentWeapon()
+{
+	ArmWeapon();
+}
+
+void ADSCharacterBase::Landed(const FHitResult & Hit)
+{
+	Super::Landed(Hit);
+
+	const uint16 MoveInputToEnable = (EActiveMoveInputFlag::InputJump | EActiveMoveInputFlag::InputEquipWeapon);
+	EnableMoveInput(MoveInputToEnable);
+}
+
+void ADSCharacterBase::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+
+	DOREPLIFETIME(ADSCharacterBase, CurrentWeapon);
 }
 
 bool ADSCharacterBase::IsArmed() const
 {
-	return IsValid(CurrentWeapon) && CurrentWeapon->IsWeaponActive();
+	return IsValid(CurrentWeapon) && CurrentWeapon->IsWeaponArmed();
 }
 
 bool ADSCharacterBase::IsSprinting() const
@@ -277,6 +320,29 @@ bool ADSCharacterBase::IsSprinting() const
 	}
 
 	return false;
+}
+
+bool ADSCharacterBase::IsMoveInputAllowed(uint16 TestInput) const
+{
+	return GetActiveMoveInputFlag() & TestInput;
+}
+
+void ADSCharacterBase::SetMoveInputFlag(uint16 NewFlag)
+{
+	ActiveMoveInputFlag = EActiveMoveInputFlag(NewFlag);
+}
+
+void ADSCharacterBase::DisableMoveInput(uint16 ExcludeFlag)
+{
+	if (ExcludeFlag <= ActiveMoveInputFlag)
+	{ 
+		SetMoveInputFlag(ActiveMoveInputFlag & (~ExcludeFlag));
+	}
+}
+
+void ADSCharacterBase::EnableMoveInput(uint16 IncludeFlag)
+{
+	SetMoveInputFlag(ActiveMoveInputFlag | IncludeFlag);
 }
 
 float ADSCharacterBase::PlayMontage(UAnimMontage * MontageToPlay, float PlayRate, float StartPosition, bool bStopAllMontage, float BlendOutTime)
@@ -293,4 +359,38 @@ float ADSCharacterBase::PlayMontage(UAnimMontage * MontageToPlay, float PlayRate
 	}
 
 	return PlayMontageLength;
+}
+
+bool ADSCharacterBase::ServerEquipWeapon_Validate(class ADSWeapon* NewWeapon)
+{
+	return true;
+}
+
+void ADSCharacterBase::ServerEquipWeapon_Implementation(class ADSWeapon* NewWeapon)
+{
+	EquipWeapon(NewWeapon);
+}
+
+bool ADSCharacterBase::ServerEquipEquipment_Validate(class ADSEquipment* NewEquipment)
+{
+	return true;
+}
+
+void ADSCharacterBase::ServerEquipEquipment_Implementation(class ADSEquipment* NewEquipment)
+{
+
+
+}
+
+bool ADSCharacterBase::ServerToggleWeapon_Validate()
+{
+	return true;
+}
+
+void ADSCharacterBase::ServerToggleWeapon_Implementation()
+{
+	if (IsValid(CurrentWeapon) && CurrentWeapon->IsEquipped())
+	{
+		CurrentWeapon->SetWeaponArmed(!CurrentWeapon->IsWeaponArmed());
+	}
 }
