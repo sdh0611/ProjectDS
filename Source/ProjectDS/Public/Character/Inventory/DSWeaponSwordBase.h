@@ -1,4 +1,4 @@
-// All rights reserve SDH (2021 ~ )
+﻿// All rights reserve SDH (2021 ~ )
 
 #pragma once
 
@@ -30,10 +30,11 @@ struct FDSWeaponAttackSequence
 {
 	GENERATED_USTRUCT_BODY()
 
-private:
+public:
 	UPROPERTY(EditAnywhere)
 	FDSWeaponAnim AttackAnim;
 
+private:
 	UPROPERTY(EditAnywhere)
 	float AttackSequenceDuration = 1.f;
 
@@ -43,24 +44,33 @@ private:
 	UPROPERTY(EditAnywhere)
 	float ComboCheckEnd = 0.f;
 
-	float AttackSequenceStartTime = 0.f;
+	// 공격 시작 후 Hit check 타이밍
+	UPROPERTY(EditAnywhere)
+	float HitCheckTime;
+
+	// 공격 시작 후 움직임을 허용하는 시간
+	UPROPERTY(EditAnywhere)
+	float MoveAllowTimeInterval;
 
 	float ElapsedTime = 0.f;
-
 	uint8 bAttacking : 1;
-
+	
 public:
 	FDSWeaponAttackSequence()
 		: AttackAnim()
 		, AttackSequenceDuration(1.f)
 		, ComboCheckStart(0.f)
 		, ComboCheckEnd(0.f)
-		, AttackSequenceStartTime(0.f)
+		, HitCheckTime(0.f)
+		, MoveAllowTimeInterval(0.f)
 		, ElapsedTime(0.f)
 		, bAttacking(false)
 	{
 	}
 
+	bool IsAttacking() const { return bAttacking; }
+	bool IsSequenceEnd() const { return ElapsedTime > AttackSequenceDuration; }
+	float GetMoveAllowTimeInterval() const { return MoveAllowTimeInterval; }
 	void Attack()
 	{
 		bAttacking = true;
@@ -68,13 +78,11 @@ public:
 
 	void Update(float DeltaTime)
 	{
-		if (bAttacking)
+		if (IsAttacking())
 		{
 			ElapsedTime += DeltaTime;
 		}
 	}
-
-	bool IsAttacking() const { return bAttacking; }
 
 	bool CanCombo() const
 	{
@@ -83,9 +91,10 @@ public:
 
 	void Reset()
 	{
+		ElapsedTime = 0.f;
 		bAttacking = false;
-		AttackSequenceStartTime = 0.f;
 	}
+
 };
 
 /**
@@ -115,7 +124,10 @@ public:
 
 private:
 	FDSWeaponAttackSequence* GetAttackSequence(int32 Index);
-	
+	void DisableCharacterMovement();
+
+public:
+	FTimerHandle MoveInputTimer;
 
 protected:
 	UPROPERTY(EditAnywhere)

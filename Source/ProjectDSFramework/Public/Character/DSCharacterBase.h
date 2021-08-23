@@ -16,18 +16,18 @@ class PROJECTDSFRAMEWORK_API ADSCharacterBase : public ACharacter
 	GENERATED_BODY()
 
 public:
-	enum EActiveMoveInputFlag : uint16
+	enum EActiveInputFlag : uint16
 	{
 		InputNone = 0x0000,
 		InputMoveForward = 0x0001,
 		InputMoveRight = 0x0002,
-		Input = 0x0004,
+		InputTurn = 0x0004,
 		InputLookUp = 0x0008,
 		InputJump  = 0x0010,
 		InputSprint = 0x0020,
-		InputEquipWeapon = 0x0040,
-		InputAttack = 0x0080,
-		InputWalk = 0x0100,
+		InputWalk = 0x0040,
+		InputEquipWeapon = 0x0080,
+		InputAttack = 0x0100,
 		InputAll = 0xffff
 	};
 
@@ -66,11 +66,11 @@ public:
 	bool IsArmed() const;
 	bool IsSprinting() const;
 	bool IsWalking() const;
-	EActiveMoveInputFlag GetActiveMoveInputFlag() const { return ActiveMoveInputFlag; }
+	EActiveInputFlag GetActiveMoveInputFlag() const { return ActiveMoveInputFlag; }
 	bool IsMoveInputAllowed(uint16 TestInput) const;
-	void SetMoveInputFlag(uint16 NewFlag);
-	void DisableMoveInput(uint16 ExcludeFlag);
-	void EnableMoveInput(uint16 IncludeFlag);
+	void SetCharacterInputFlag(uint16 NewFlag);
+	void DisableCharacterInput(uint16 ExcludeFlag);
+	void EnableCharacterInput(uint16 IncludeFlag);
 
 public:
 	float PlayMontage(class UAnimMontage* MontageToPlay, float PlayRate = 1.f, float StartPosition = 0.f, bool bStopAllMontage = false, float BlendOutTime = 0.f);
@@ -88,7 +88,7 @@ protected:
 	void StartJump();
 	void EndJump();
 	void Sprint(bool bSprint);
-	void Walk(bool bSprint);
+	void Walk(bool bWalk);
 	void ToggleCrouch();
 	void ToggleWeapon();
 	void Attack();
@@ -129,7 +129,7 @@ public:
 	TSubclassOf<ADSWeapon> TestWeaponClass;
 
 private:
-	EActiveMoveInputFlag ActiveMoveInputFlag;
+	EActiveInputFlag ActiveMoveInputFlag;
 
 protected:
 	UPROPERTY(VisibleAnywhere, Category=Inventory, ReplicatedUsing=OnRep_CurrentWeapon)

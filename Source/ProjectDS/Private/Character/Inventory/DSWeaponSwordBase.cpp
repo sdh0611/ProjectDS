@@ -1,4 +1,4 @@
-// All rights reserve SDH (2021 ~ )
+﻿// All rights reserve SDH (2021 ~ )
 
 
 #include "DSWeaponSwordBase.h"
@@ -11,7 +11,6 @@ ADSWeaponSwordBase::ADSWeaponSwordBase()
 void ADSWeaponSwordBase::BeginPlay()
 {
 	Super::BeginPlay();
-
 }
 
 void ADSWeaponSwordBase::InternalUpdateWeapon(float DeltaTime)
@@ -24,9 +23,21 @@ void ADSWeaponSwordBase::InternalUpdateWeapon(float DeltaTime)
 void ADSWeaponSwordBase::UpdateAttackSequence(float DeltaTime)
 {
 	FDSWeaponAttackSequence* CurSequence = GetAttackSequence(CurrentCombo);
-	if (CurSequence)
+	if (CurSequence && CurSequence->IsAttacking())
 	{
-		CurSequence->Update(DeltaTime);
+		if (CurSequence->IsSequenceEnd())
+		{
+			CurSequence->Reset();
+			CurrentCombo = 0;
+			if (OwnerCharacter.IsValid())
+			{
+				OwnerCharacter->EnableCharacterInput(ADSCharacterBase::EActiveInputFlag::InputAll);
+			}
+		}
+		else
+		{
+			CurSequence->Update(DeltaTime);
+		}
 	}
 }
 
@@ -49,14 +60,40 @@ bool ADSWeaponSwordBase::CanAttack() const
 
 void ADSWeaponSwordBase::DoAttack()
 {
-	if (CanAttack())
+	if (OwnerCharacter.IsValid())
 	{
 		FDSWeaponAttackSequence* Sequence = GetAttackSequence(CurrentCombo);
 		if (Sequence)
 		{
+			bool bCanAttack = false;
+			if (!Sequence->IsAttacking())
+			{
+				bCanAttack = true;
+			}
+			else if (Sequence->CanCombo())
+			{
+				Sequence->Reset();
+				Sequence = GetAttackSequence(++CurrentCombo);
+				if (Sequence)
+				{
+					bCanAttack = true;
+				}
+			}
 
+			if (bCanAttack)
+			{
+				Sequence->Attack();
+				OwnerCharacter->SetCharacterInputFlag(ADSCharacterBase::EActiveInputFlag::InputAll);
+				OwnerCharacter->DisableCharacterInput(ADSCharacterBase::EActiveInputFlag::InputJump | ADSCharacterBase::EActiveInputFlag::InputEquipWeapon);
+				GetWorldTimerManager().SetTimer(MoveInputTimer, this, &ADSWeaponSwordBase::DisableCharacterMovement, Sequence->GetMoveAllowTimeInterval(), false);
+				if (Sequence->AttackAnim.WeaponAnim)
+				{
+					OwnerCharacter->PlayAnimMontage(Sequence->AttackAnim.WeaponAnim, Sequence->AttackAnim.PlayRate);
+				}
+			}
 		}
 	}
+
 }
 
 const FDSWeaponAttackSequence* ADSWeaponSwordBase::GetAttackSequence(int32 Index) const
@@ -77,4 +114,14 @@ FDSWeaponAttackSequence* ADSWeaponSwordBase::GetAttackSequence(int32 Index)
 	}
 
 	return nullptr;
+}
+
+void ADSWeaponSwordBase::DisableCharacterMovement()
+{
+	if (OwnerCharacter.IsValid())
+	{
+		// Attack, LookUp, Turn 빼고 모든 입력을 막음.
+		uint16 EnableInput = ADSCharacterBase::EActiveInputFlag::InputAttack | ADSCharacterBase::EActiveInputFlag::InputLookUp | ADSCharacterBase::EActiveInputFlag::InputTurn;
+		OwnerCharacter->SetCharacterInputFlag(EnableInput);
+	}
 }

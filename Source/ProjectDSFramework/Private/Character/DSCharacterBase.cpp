@@ -38,7 +38,7 @@ ADSCharacterBase::ADSCharacterBase(const FObjectInitializer& ObjectInitializer)
 
 	CharacterStat = CreateDefaultSubobject<UDSCharacterStatComponent>(CharacterStatComponentName);
 
-	ActiveMoveInputFlag = EActiveMoveInputFlag::InputAll;
+	ActiveMoveInputFlag = EActiveInputFlag::InputAll;
 }
 
 // Called when the game starts or when spawned
@@ -122,8 +122,8 @@ void ADSCharacterBase::Falling()
 {
 	Super::Falling();
 	
-	const uint16 InputFlagToDIsable = (EActiveMoveInputFlag::InputJump | EActiveMoveInputFlag::InputEquipWeapon);
-	DisableMoveInput(InputFlagToDIsable);
+	const uint16 InputFlagToDIsable = (EActiveInputFlag::InputJump | EActiveInputFlag::InputEquipWeapon);
+	DisableCharacterInput(InputFlagToDIsable);
 }
 
 void ADSCharacterBase::SetSprinting(bool bSprint)
@@ -158,37 +158,49 @@ void ADSCharacterBase::SetWalking(bool bWalk)
 
 void ADSCharacterBase::MoveForward(float Value)
 {
-	if (Controller && Value != 0.f)
+	if (IsMoveInputAllowed(EActiveInputFlag::InputMoveForward))
 	{
-		const FRotator Yaw(0.f, Controller->GetControlRotation().Yaw, 0.f);
-		const FVector Dir = FRotationMatrix(Yaw).GetUnitAxis(EAxis::X);
-		AddMovementInput(Dir * Value);
+		if (Controller && Value != 0.f)
+		{
+			const FRotator Yaw(0.f, Controller->GetControlRotation().Yaw, 0.f);
+			const FVector Dir = FRotationMatrix(Yaw).GetUnitAxis(EAxis::X);
+			AddMovementInput(Dir * Value);
+		}
 	}
 }
 
 void ADSCharacterBase::MoveRight(float Value)
 {
-	if (Controller && Value != 0.f)
+	if (IsMoveInputAllowed(EActiveInputFlag::InputMoveRight))
 	{
-		const FRotator Yaw(0.f, Controller->GetControlRotation().Yaw, 0.f);
-		const FVector Dir = FRotationMatrix(Yaw).GetUnitAxis(EAxis::Y);
-		AddMovementInput(Dir * Value);
+		if (Controller && Value != 0.f)
+		{
+			const FRotator Yaw(0.f, Controller->GetControlRotation().Yaw, 0.f);
+			const FVector Dir = FRotationMatrix(Yaw).GetUnitAxis(EAxis::Y);
+			AddMovementInput(Dir * Value);
+		}
 	}
 }
 
 void ADSCharacterBase::Turn(float Value)
 {
-	AddControllerYawInput(Value);
+	if (IsMoveInputAllowed(EActiveInputFlag::InputTurn))
+	{
+		AddControllerYawInput(Value);
+	}
 }
 
 void ADSCharacterBase::LookUp(float Value)
 {
-	AddControllerPitchInput(Value);
+	if (IsMoveInputAllowed(EActiveInputFlag::InputLookUp))
+	{
+		AddControllerPitchInput(Value);
+	}
 }
 
 void ADSCharacterBase::StartJump()
 {
-	if (IsMoveInputAllowed(EActiveMoveInputFlag::InputJump) && !bPressedJump)
+	if (IsMoveInputAllowed(EActiveInputFlag::InputJump) && !bPressedJump)
 	{
 		Jump();
 		if (IsValid(DSMovement))
@@ -205,7 +217,7 @@ void ADSCharacterBase::EndJump()
 
 void ADSCharacterBase::Sprint(bool bSprint)
 {
-	if (IsMoveInputAllowed(EActiveMoveInputFlag::InputSprint))
+	if (IsMoveInputAllowed(EActiveInputFlag::InputSprint) || bSprint)
 	{
 		SetSprinting(bSprint);
 		if (IsNetMode(NM_Client))
@@ -225,11 +237,11 @@ void ADSCharacterBase::Sprint(bool bSprint)
 	}
 }
 
-void ADSCharacterBase::Walk(bool bSprint)
+void ADSCharacterBase::Walk(bool bWalk)
 {
-	if (IsMoveInputAllowed(EActiveMoveInputFlag::InputWalk))
+	if (IsMoveInputAllowed(EActiveInputFlag::InputWalk) || !bWalk)
 	{
-		SetWalking(bSprint);
+		SetWalking(bWalk);
 	}
 }
 
@@ -248,7 +260,7 @@ void ADSCharacterBase::ToggleCrouch()
 
 void ADSCharacterBase::ToggleWeapon()
 {
-	if (IsMoveInputAllowed(EActiveMoveInputFlag::InputEquipWeapon))
+	if (IsMoveInputAllowed(EActiveInputFlag::InputEquipWeapon))
 	{
 		if (IsValid(CurrentWeapon) && CurrentWeapon->IsEquipped())
 		{
@@ -266,7 +278,7 @@ void ADSCharacterBase::ToggleWeapon()
 
 void ADSCharacterBase::Attack()
 {
-	if (IsMoveInputAllowed(EActiveMoveInputFlag::InputAttack))
+	if (IsMoveInputAllowed(EActiveInputFlag::InputAttack))
 	{
 		if (IsValid(CurrentWeapon))
 		{
@@ -325,8 +337,8 @@ void ADSCharacterBase::Landed(const FHitResult & Hit)
 {
 	Super::Landed(Hit);
 
-	const uint16 MoveInputToEnable = (EActiveMoveInputFlag::InputJump | EActiveMoveInputFlag::InputEquipWeapon);
-	EnableMoveInput(MoveInputToEnable);
+	const uint16 MoveInputToEnable = (EActiveInputFlag::InputJump | EActiveInputFlag::InputEquipWeapon);
+	EnableCharacterInput(MoveInputToEnable);
 }
 
 void ADSCharacterBase::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -366,22 +378,22 @@ bool ADSCharacterBase::IsMoveInputAllowed(uint16 TestInput) const
 	return GetActiveMoveInputFlag() & TestInput;
 }
 
-void ADSCharacterBase::SetMoveInputFlag(uint16 NewFlag)
+void ADSCharacterBase::SetCharacterInputFlag(uint16 NewFlag)
 {
-	ActiveMoveInputFlag = EActiveMoveInputFlag(NewFlag);
+	ActiveMoveInputFlag = EActiveInputFlag(NewFlag);
 }
 
-void ADSCharacterBase::DisableMoveInput(uint16 ExcludeFlag)
+void ADSCharacterBase::DisableCharacterInput(uint16 ExcludeFlag)
 {
 	if (ExcludeFlag <= ActiveMoveInputFlag)
 	{ 
-		SetMoveInputFlag(ActiveMoveInputFlag & (~ExcludeFlag));
+		SetCharacterInputFlag(ActiveMoveInputFlag & (~ExcludeFlag));
 	}
 }
 
-void ADSCharacterBase::EnableMoveInput(uint16 IncludeFlag)
+void ADSCharacterBase::EnableCharacterInput(uint16 IncludeFlag)
 {
-	SetMoveInputFlag(ActiveMoveInputFlag | IncludeFlag);
+	SetCharacterInputFlag(ActiveMoveInputFlag | IncludeFlag);
 }
 
 float ADSCharacterBase::PlayMontage(UAnimMontage * MontageToPlay, float PlayRate, float StartPosition, bool bStopAllMontage, float BlendOutTime)
