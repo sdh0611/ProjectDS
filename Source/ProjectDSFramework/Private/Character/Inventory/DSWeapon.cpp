@@ -50,7 +50,6 @@ void ADSWeapon::Tick(float DeltaTime)
 
 void ADSWeapon::InternalUpdateWeapon(float DeltaTime)
 {
-
 }
 
 void ADSWeapon::InternalEquipped()

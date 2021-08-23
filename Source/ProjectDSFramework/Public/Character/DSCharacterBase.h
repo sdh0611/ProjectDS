@@ -27,6 +27,7 @@ public:
 		InputSprint = 0x0020,
 		InputEquipWeapon = 0x0040,
 		InputAttack = 0x0080,
+		InputWalk = 0x0100,
 		InputAll = 0xffff
 	};
 
@@ -64,6 +65,7 @@ public:
 	FORCEINLINE ADSWeapon* GetCurrentWeapon() const { return CurrentWeapon; }
 	bool IsArmed() const;
 	bool IsSprinting() const;
+	bool IsWalking() const;
 	EActiveMoveInputFlag GetActiveMoveInputFlag() const { return ActiveMoveInputFlag; }
 	bool IsMoveInputAllowed(uint16 TestInput) const;
 	void SetMoveInputFlag(uint16 NewFlag);
@@ -75,6 +77,7 @@ public:
 
 protected:
 	void SetSprinting(bool bSprint);
+	void SetWalking(bool bWalk);
 
 protected:
 	void MoveForward(float Value);
@@ -85,6 +88,7 @@ protected:
 	void StartJump();
 	void EndJump();
 	void Sprint(bool bSprint);
+	void Walk(bool bSprint);
 	void ToggleCrouch();
 	void ToggleWeapon();
 	void Attack();
@@ -112,6 +116,7 @@ protected:
 public:
 	static FName SpringArmComponentName;
 	static FName CameraComponentName;
+	static FName CharacterStatComponentName;
 
 protected:
 	// {{ Input binding delegates
@@ -134,11 +139,14 @@ protected:
 	class UDSCharacterAnimInstance* DSAnimInstance;
 
 protected:
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(VisibleAnywhere)
 	class USpringArmComponent* SpringArm;
 
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(VisibleAnywhere)
 	class UCameraComponent* Camera;
+
+	UPROPERTY(VisibleAnywhere)
+	class UDSCharacterStatComponent* CharacterStat;
 
 	UPROPERTY(Transient)
 	class UDSCharacterMovementComponent* DSMovement;

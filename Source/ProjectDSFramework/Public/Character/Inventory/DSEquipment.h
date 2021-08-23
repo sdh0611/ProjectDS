@@ -32,6 +32,7 @@ public:
 	void Unequipped();
 
 protected:
+	virtual void InternalDiscard() override;
 	virtual void InternalEquipped();
 	virtual void InternalUnequipped();
 	virtual void OnEquipped();

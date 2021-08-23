@@ -27,10 +27,14 @@ public:
 
 public:
 	virtual void GivenTo(ADSCharacterBase* NewOwner);
+	void Discard();
 	ADSCharacterBase* GetInventoryEntityOwner() { return OwnerCharacter.Get(); }
 
 protected:
-	UPROPERTY(Replicated)
+	virtual void InternalDiscard();
+
+protected:
+	UPROPERTY(Transient, Replicated)
 	TWeakObjectPtr<ADSCharacterBase> OwnerCharacter;
 
 };

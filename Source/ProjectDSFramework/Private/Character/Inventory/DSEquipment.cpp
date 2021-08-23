@@ -25,7 +25,6 @@ void ADSEquipment::BeginPlay()
 {
 	Super::BeginPlay();
 
-	//SetActorHiddenInGame(true);
 }
 
 void ADSEquipment::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -39,12 +38,6 @@ void ADSEquipment::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLife
 void ADSEquipment::PostNetReceive()
 {
 	Super::PostNetReceive();
-
-	//if (!IsHidden())
-	//{
-		//SetActorHiddenInGame(IsHidden());
-		//MarkComponentsRenderStateDirty();
-	//}
 
 }
 
@@ -99,6 +92,13 @@ void ADSEquipment::OnEquipped()
 void ADSEquipment::OnUnequipped()
 {
 	DetachFromCharacter();
+}
+
+void ADSEquipment::InternalDiscard()
+{
+	Super::InternalDiscard();
+
+	Unequipped();
 }
 
 void ADSEquipment::AttachToCharacter(const FName & AttackSocketName)

@@ -7,8 +7,12 @@
 UDSCharacterMovementComponent::UDSCharacterMovementComponent()
 {
 	SprintSpeedMultiflier = 1.5f;
+
 	bWantsToSprint = false;
 	bSprinting = false;
+
+	bWantsToWalk = false;
+	bWalking = false;
 }
 
 void UDSCharacterMovementComponent::SetUpdatedComponent(USceneComponent * NewUpdatedComponent)
@@ -42,7 +46,6 @@ float UDSCharacterMovementComponent::GetMaxAcceleration() const
 	MaxAccel *= GetCurrentSpeedMultiflier();
 
 	return MaxAccel;
-	//return Super::GetMaxAcceleration();
 }
 
 FNetworkPredictionData_Client * UDSCharacterMovementComponent::GetPredictionData_Client() const
@@ -74,12 +77,27 @@ void UDSCharacterMovementComponent::SetSprinting(bool bSprint)
 	bSprinting = bSprint;
 }
 
+void UDSCharacterMovementComponent::DoWalk(bool bWalk)
+{
+	bWantsToWalk = bWalk;
+	SetWalking(bWalk);
+}
+
+void UDSCharacterMovementComponent::SetWalking(bool bWalk)
+{
+	bWalking = bWalk;
+}
+
 float UDSCharacterMovementComponent::GetCurrentSpeedMultiflier() const
 {
 	float FinalSpeedMultiflier = 1.f;
 	if (IsSprinting())
 	{
 		FinalSpeedMultiflier = SprintSpeedMultiflier;
+	}
+	else if (IsWalking())
+	{
+		FinalSpeedMultiflier = WalkSpeedMultiflier;
 	}
 
 	return FinalSpeedMultiflier;
@@ -92,6 +110,7 @@ void UDSCharacterMovementComponent::UpdateFromCompressedFlags(uint8 Flags)
 	if (OwnerDSCharacter.IsValid())
 	{
 		SetSprinting( (Flags & FDSSavedMove_Character::CompressedFlags::FLAG_Custom_0) != 0 );
+		SetWalking( (Flags & FDSSavedMove_Character::CompressedFlags::FLAG_Custom_1) != 0 );
 	}
 }
 
@@ -116,6 +135,7 @@ void UDSCharacterMovementComponent::ProcessLanded(const FHitResult & Hit, float 
 FDSSavedMove_Character::FDSSavedMove_Character()
 {
 	bWantsToSprint = false;
+	bWantsToWalk = false;
 }
 
 FDSSavedMove_Character::~FDSSavedMove_Character()
@@ -127,6 +147,7 @@ void FDSSavedMove_Character::Clear()
 	Super::Clear();
 
 	bWantsToSprint = false;
+	bWantsToWalk = false;
 }
 
 void FDSSavedMove_Character::SetMoveFor(ACharacter * C, float InDeltaTime, FVector const & NewAccel, FNetworkPredictionData_Client_Character & ClientData)
@@ -139,6 +160,7 @@ void FDSSavedMove_Character::SetMoveFor(ACharacter * C, float InDeltaTime, FVect
 		if (DSMovement)
 		{
 			bWantsToSprint = DSMovement->WantsToSprint();
+			bWantsToWalk = DSMovement->WantsToWalk();
 		}
 	}
 
@@ -154,7 +176,11 @@ bool FDSSavedMove_Character::CanCombineWith(const FSavedMovePtr & NewMove, AChar
 			return false;
 		}
 
-		// Jump, Crouch는 Sprint와 결합 불가능
+		if (bWantsToWalk != NewDSMove->bWantsToWalk)
+		{
+			return false;
+		}
+
 		if (NewMove->bWasJumping || NewMove->bWantsToCrouch)
 		{
 			return false;
@@ -190,6 +216,10 @@ uint8 FDSSavedMove_Character::GetCompressedFlags() const
 	if (bWantsToSprint)
 	{
 		Result |= FLAG_Custom_0;
+	}
+	else if (bWantsToWalk)
+	{
+		Result |= FLAG_Custom_1;
 	}
 
 	return Result;

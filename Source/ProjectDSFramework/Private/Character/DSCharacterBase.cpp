@@ -11,9 +11,11 @@
 #include "DSWeapon.h"
 #include "DSCharacterAnimInstance.h"
 #include "Net/UnrealNetwork.h"
+#include "DSCharacterStatComponent.h"
 
 FName ADSCharacterBase::SpringArmComponentName = TEXT("SpringArm");
 FName ADSCharacterBase::CameraComponentName = TEXT("Camera");
+FName ADSCharacterBase::CharacterStatComponentName = TEXT("CharacterStat");
 
 // Sets default values
 ADSCharacterBase::ADSCharacterBase(const FObjectInitializer& ObjectInitializer)
@@ -33,6 +35,8 @@ ADSCharacterBase::ADSCharacterBase(const FObjectInitializer& ObjectInitializer)
 			Camera->SetupAttachment(SpringArm);
 		}
 	}
+
+	CharacterStat = CreateDefaultSubobject<UDSCharacterStatComponent>(CharacterStatComponentName);
 
 	ActiveMoveInputFlag = EActiveMoveInputFlag::InputAll;
 }
@@ -108,6 +112,8 @@ void ADSCharacterBase::SetupPlayerInputComponent(UInputComponent* PlayerInputCom
 		PlayerInputComponent->BindAction(TEXT("Attack"), EInputEvent::IE_Pressed, this, &ADSCharacterBase::Attack);
 		PlayerInputComponent->BindAction<FActionInputDelegate>(TEXT("Sprint"), EInputEvent::IE_Pressed, this, &ADSCharacterBase::Sprint, true);
 		PlayerInputComponent->BindAction<FActionInputDelegate>(TEXT("Sprint"), EInputEvent::IE_Released, this, &ADSCharacterBase::Sprint, false);
+		PlayerInputComponent->BindAction<FActionInputDelegate>(TEXT("Walk"), EInputEvent::IE_Pressed, this, &ADSCharacterBase::Walk, true);
+		PlayerInputComponent->BindAction<FActionInputDelegate>(TEXT("Walk"), EInputEvent::IE_Released, this, &ADSCharacterBase::Walk, false);
 	}
 
 }
@@ -131,6 +137,21 @@ void ADSCharacterBase::SetSprinting(bool bSprint)
 		else
 		{
 			DSMovement->DoSprint(bSprint);
+		}
+	}
+}
+
+void ADSCharacterBase::SetWalking(bool bWalk)
+{
+	if (IsValid(DSMovement))
+	{
+		if (HasAuthority())
+		{
+			DSMovement->SetWalking(bWalk);
+		}
+		else
+		{
+			DSMovement->DoWalk(bWalk);
 		}
 	}
 }
@@ -204,6 +225,14 @@ void ADSCharacterBase::Sprint(bool bSprint)
 	}
 }
 
+void ADSCharacterBase::Walk(bool bSprint)
+{
+	if (IsMoveInputAllowed(EActiveMoveInputFlag::InputWalk))
+	{
+		SetWalking(bSprint);
+	}
+}
+
 void ADSCharacterBase::ToggleCrouch()
 {
 	if (!bIsCrouched)
@@ -239,7 +268,7 @@ void ADSCharacterBase::Attack()
 {
 	if (IsMoveInputAllowed(EActiveMoveInputFlag::InputAttack))
 	{
-		if (IsValid(CurrentWeapon) && CurrentWeapon->CanAttack())
+		if (IsValid(CurrentWeapon))
 		{
 			CurrentWeapon->DoAttack();
 		}
@@ -317,6 +346,16 @@ bool ADSCharacterBase::IsSprinting() const
 	if (IsValid(DSMovement))
 	{
 		return DSMovement->IsSprinting();
+	}
+
+	return false;
+}
+
+bool ADSCharacterBase::IsWalking() const
+{
+	if(IsValid(DSMovement))
+	{
+		return DSMovement->IsWalking();
 	}
 
 	return false;

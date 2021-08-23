@@ -34,9 +34,14 @@ public:
 
 	void DoSprint(bool bSprint);
 	void SetSprinting(bool bSprint);
+	void DoWalk(bool bWalk);
+	void SetWalking(bool bWalk);
 
 	bool IsSprinting() const { return bSprinting; }
 	bool WantsToSprint() const { return bWantsToSprint; }
+	bool IsWalking() const { return bWalking; }
+	bool WantsToWalk() const { return bWantsToWalk; }
+
 	float GetCurrentSpeedMultiflier() const;
 
 protected:
@@ -52,12 +57,21 @@ protected:
 private:
 	UPROPERTY(EditAnywhere, Category = Move)
 	float SprintSpeedMultiflier;
-	
+
+	UPROPERTY(EditAnywhere, Category = Move)
+	float WalkSpeedMultiflier;
+
 	UPROPERTY(Transient)
 	uint8 bWantsToSprint : 1;
 
 	UPROPERTY(Transient)
 	uint8 bSprinting : 1;
+
+	UPROPERTY(Transient)
+	uint8 bWantsToWalk : 1;
+
+	UPROPERTY(Transient)
+	uint8 bWalking : 1;
 
 	TWeakObjectPtr<class ADSCharacterBase> OwnerDSCharacter;
 };
@@ -92,6 +106,7 @@ public:
 	virtual uint8 GetCompressedFlags() const override;
 
 	uint32 bWantsToSprint : 1;
+	uint32 bWantsToWalk : 1;
 
 };
 

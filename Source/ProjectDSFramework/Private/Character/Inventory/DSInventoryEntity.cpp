@@ -10,7 +10,7 @@ ADSInventoryEntity::ADSInventoryEntity()
 {
  	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = false;
-	bReplicates = false;
+	bReplicates = true;
 }
 
 // Called when the game starts or when spawned
@@ -24,11 +24,21 @@ void ADSInventoryEntity::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& O
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
-	DOREPLIFETIME(ADSInventoryEntity, OwnerCharacter);
+	DOREPLIFETIME_CONDITION(ADSInventoryEntity, OwnerCharacter, COND_OwnerOnly);
 }
 
 void ADSInventoryEntity::GivenTo(ADSCharacterBase * NewOwner)
 {
 	OwnerCharacter = NewOwner;
+}
 
+void ADSInventoryEntity::Discard()
+{
+	InternalDiscard();
+
+	OwnerCharacter.Reset();
+}
+
+void ADSInventoryEntity::InternalDiscard()
+{
 }
