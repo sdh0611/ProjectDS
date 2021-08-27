@@ -3,6 +3,8 @@
 
 #include "DSWeaponSwordBase.h"
 #include "DSCharacterBase.h"
+#include "DrawDebugHelpers.h"
+
 
 ADSWeaponSwordBase::ADSWeaponSwordBase()
 {
@@ -49,13 +51,10 @@ void ADSWeaponSwordBase::Tick(float DeltaTime)
 
 bool ADSWeaponSwordBase::CanAttack() const
 {
-	const FDSWeaponAttackSequence* Sequence = GetAttackSequence(CurrentCombo);
-	if (Sequence)
-	{
-		return !Sequence->IsAttacking() || Sequence->CanCombo();
-	}
+	const bool bCanAttack = Super::CanAttack() && IsWeaponArmed();
 
-	return false;
+	return bCanAttack;
+	//return CurrentCombo < AttackSequence.Num();
 }
 
 void ADSWeaponSwordBase::DoAttack()
@@ -70,7 +69,7 @@ void ADSWeaponSwordBase::DoAttack()
 			{
 				bCanAttack = true;
 			}
-			else if (Sequence->CanCombo())
+			else if (Sequence->CanCombo() && AttackSequence.IsValidIndex(CurrentCombo+1))
 			{
 				Sequence->Reset();
 				Sequence = GetAttackSequence(++CurrentCombo);
@@ -83,9 +82,10 @@ void ADSWeaponSwordBase::DoAttack()
 			if (bCanAttack)
 			{
 				Sequence->Attack();
-				OwnerCharacter->SetCharacterInputFlag(ADSCharacterBase::EActiveInputFlag::InputAll);
-				OwnerCharacter->DisableCharacterInput(ADSCharacterBase::EActiveInputFlag::InputJump | ADSCharacterBase::EActiveInputFlag::InputEquipWeapon);
-				GetWorldTimerManager().SetTimer(MoveInputTimer, this, &ADSWeaponSwordBase::DisableCharacterMovement, Sequence->GetMoveAllowTimeInterval(), false);
+				DisableCharacterMovement();
+				//OwnerCharacter->SetCharacterInputFlag(ADSCharacterBase::EActiveInputFlag::InputAll);
+				//OwnerCharacter->DisableCharacterInput(ADSCharacterBase::EActiveInputFlag::InputJump | ADSCharacterBase::EActiveInputFlag::InputEquipWeapon);
+				//GetWorldTimerManager().SetTimer(MoveInputTimer, this, &ADSWeaponSwordBase::DisableCharacterMovement, Sequence->GetMoveAllowTimeInterval(), false);
 				if (Sequence->AttackAnim.WeaponAnim)
 				{
 					OwnerCharacter->PlayAnimMontage(Sequence->AttackAnim.WeaponAnim, Sequence->AttackAnim.PlayRate);

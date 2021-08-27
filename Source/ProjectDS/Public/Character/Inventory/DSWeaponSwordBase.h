@@ -136,6 +136,7 @@ protected:
 	UPROPERTY(EditDefaultsOnly)
 	TArray<FDSWeaponAttackSequence> AttackSequence;
 
+	UPROPERTY(Transient)
 	int32 CurrentCombo = 0;
 
 

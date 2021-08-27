@@ -12,6 +12,7 @@
 #include "DSCharacterAnimInstance.h"
 #include "Net/UnrealNetwork.h"
 #include "DSCharacterStatComponent.h"
+#include "DrawDebugHelpers.h"
 
 FName ADSCharacterBase::SpringArmComponentName = TEXT("SpringArm");
 FName ADSCharacterBase::CameraComponentName = TEXT("Camera");
@@ -91,6 +92,7 @@ void ADSCharacterBase::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
+	//DrawDebugBox(GetWorld(), GetActorLocation(), FVector(20.f), FColor::Yellow);
 }
 
 // Called to bind functionality to input
@@ -280,7 +282,7 @@ void ADSCharacterBase::Attack()
 {
 	if (IsMoveInputAllowed(EActiveInputFlag::InputAttack))
 	{
-		if (IsValid(CurrentWeapon))
+		if (IsValid(CurrentWeapon) && CurrentWeapon->CanAttack())
 		{
 			CurrentWeapon->DoAttack();
 		}
