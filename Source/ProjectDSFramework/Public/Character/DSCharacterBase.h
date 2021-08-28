@@ -59,10 +59,28 @@ public:
 	virtual void Landed(const FHitResult& Hit) override;
 	/** Returns the properties used for network replication, this needs to be overridden by all actor classes with native replicated properties */
 	void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
+	/**
+	 * Apply damage to this actor.
+	 * @see https://www.unrealengine.com/blog/damage-in-ue4
+	 * @param DamageAmount		How much damage to apply
+	 * @param DamageEvent		Data package that fully describes the damage received.
+	 * @param EventInstigator	The Controller responsible for the damage.
+	 * @param DamageCauser		The Actor that directly caused the damage (e.g. the projectile that exploded, the rock that landed on you)
+	 * @return					The amount of damage actually applied.
+	 */
+	virtual float TakeDamage(float DamageAmount, struct FDamageEvent const& DamageEvent, class AController* EventInstigator, AActor* DamageCauser) override;
+
+
 
 public:
 	FORCEINLINE UDSCharacterMovementComponent* GetDSCharacterMovement() const { return DSMovement; }
 	FORCEINLINE ADSWeapon* GetCurrentWeapon() const { return CurrentWeapon; }
+	template<typename T>
+	T* GetCurrentWeapon()
+	{
+		return Cast<T>(CurrentWeapon);
+	}
+
 	bool IsArmed() const;
 	bool IsSprinting() const;
 	bool IsWalking() const;

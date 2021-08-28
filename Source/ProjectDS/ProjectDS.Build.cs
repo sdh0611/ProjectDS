@@ -18,6 +18,7 @@ public class ProjectDS : ModuleRules
                         "ProjectDS/Public",
                         "ProjectDS/Public/Character",
                         "ProjectDS/Public/Character/Inventory",
+                        "ProjectDS/Public/Character/Anim",
                         //"ProjectDS/Public/Game",
                         "ProjectDS/Public/Player",
                         "ProjectDSFramework/Public",

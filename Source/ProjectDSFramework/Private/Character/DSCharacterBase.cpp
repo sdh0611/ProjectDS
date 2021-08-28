@@ -350,6 +350,15 @@ void ADSCharacterBase::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Out
 	DOREPLIFETIME(ADSCharacterBase, CurrentWeapon);
 }
 
+float ADSCharacterBase::TakeDamage(float DamageAmount, FDamageEvent const & DamageEvent, AController * EventInstigator, AActor * DamageCauser)
+{
+	float FinalDamage = Super::TakeDamage(DamageAmount, DamageEvent, EventInstigator, DamageCauser);
+
+	UE_LOG(LogClass, Warning, TEXT("[TakeDamageLog] Take damage !!!"));
+
+	return FinalDamage;
+}
+
 bool ADSCharacterBase::IsArmed() const
 {
 	return IsValid(CurrentWeapon) && CurrentWeapon->IsWeaponArmed();

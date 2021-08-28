@@ -54,7 +54,7 @@ private:
 
 	float ElapsedTime = 0.f;
 	uint8 bAttacking : 1;
-	
+
 public:
 	FDSWeaponAttackSequence()
 		: AttackAnim()
@@ -97,6 +97,52 @@ public:
 
 };
 
+USTRUCT()
+struct FDSAttackHitCheckHelper
+{
+	GENERATED_USTRUCT_BODY()
+
+public:
+	UPROPERTY(EditAnywhere)
+	FName WeaponTraceStart;
+
+	UPROPERTY(EditAnywhere)
+	FName WeaponTraceEnd;
+
+private:
+	UPROPERTY(EditAnywhere)
+	int32 HitCheckTraceNum;
+
+	UPROPERTY(EditAnywhere)
+	float HitCheckInterval;
+
+	TWeakObjectPtr<class ADSWeaponSwordBase> OwnerPrivate;
+	TArray<FVector> PrevAttackTraceFootstep;
+	TArray<FVector> AttackTraceFootstep;
+	FCollisionQueryParams CollisionQuery;
+	float ElapsedTime = 0.f;
+	uint8 bActive : 1;
+
+public:
+	FDSAttackHitCheckHelper()
+	{
+		bActive = false;
+	}
+
+	void Initialize(class ADSWeaponSwordBase* OwnerSwordWeapon);
+	void Reset();
+	void Update(float DeltaTime);
+	void HitCheckStart();
+	void HitCheckEnd();
+	bool IsInHitCheckProcess() const { return bActive; }
+
+private:
+	void UpdateAttackTraceFootstep();
+	void HitCheck();
+	void CacheAttackTraceFootstep();
+
+};
+
 /**
  * 
  */
@@ -121,13 +167,24 @@ public:
 	virtual bool CanAttack() const override;
 	virtual void DoAttack() override;
 	const FDSWeaponAttackSequence* GetAttackSequence(int32 Index) const;
+	FVector GetSocketLocation(const FName& SocketName);
+
+protected:
+	virtual void InternalUnequipped() override;
 
 private:
 	FDSWeaponAttackSequence* GetAttackSequence(int32 Index);
 	void DisableCharacterMovement();
 
+	// {{ Weapon attack check
+	void CheckAttackHit(float DeltaTime);
+	// }} Weapon attack check
+
 public:
 	FTimerHandle MoveInputTimer;
+
+	UPROPERTY(EditAnywhere)
+	FDSAttackHitCheckHelper AttackHitCheckHelper;
 
 protected:
 	UPROPERTY(EditAnywhere)
