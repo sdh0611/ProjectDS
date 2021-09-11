@@ -39,7 +39,8 @@ void ADSWeaponSwordBase::UpdateAttackSequence(float DeltaTime)
 		if (CurSequence->IsSequenceEnd())
 		{
 			CurSequence->Reset();
-			CurrentCombo = 0;
+			//CurrentCombo = 0;
+			CurrentCombo = INDEX_NONE;
 			if (OwnerCharacter.IsValid())
 			{
 				OwnerCharacter->EnableCharacterInput(ADSCharacterBase::EActiveInputFlag::InputAll);
@@ -61,43 +62,99 @@ bool ADSWeaponSwordBase::CanAttack() const
 	return bCanAttack;
 }
 
+//bool ADSWeaponSwordBase::DoAttack()
+//{
+//	if (OwnerCharacter.IsValid())
+//	{
+//		const int32 NextCombo = CurrentCombo + 1;
+//		FDSWeaponAttackSequence* Sequence = GetAttackSequence(NextCombo);
+//		if (Sequence)
+//		{
+//			bool bCanAttack = false;
+//			if (!Sequence->IsAttacking())
+//			{
+//				bCanAttack = true;
+//			}
+//			else if (Sequence->CanCombo() && AttackSequence.IsValidIndex(NextCombo))
+//			{
+//				// Reset prev attack sequence
+//				FDSWeaponAttackSequence* PrevSequence = GetAttackSequence(CurrentCombo);
+//				if (PrevSequence)
+//				{
+//					Sequence->Reset();
+//				}
+//
+//				// Get next attack sequence
+//				Sequence = GetAttackSequence(NextCombo);
+//				if (Sequence)
+//				{
+//					bCanAttack = true;
+//				}
+//			}
+//
+//			if (bCanAttack)
+//			{
+//				CurrentCombo = NextCombo;
+//
+//				Sequence->Attack();
+//				DisableCharacterMovement();
+//				//OwnerCharacter->SetCharacterInputFlag(ADSCharacterBase::EActiveInputFlag::InputAll);
+//				//OwnerCharacter->DisableCharacterInput(ADSCharacterBase::EActiveInputFlag::InputJump | ADSCharacterBase::EActiveInputFlag::InputEquipWeapon);
+//				//GetWorldTimerManager().SetTimer(MoveInputTimer, this, &ADSWeaponSwordBase::DisableCharacterMovement, Sequence->GetMoveAllowTimeInterval(), false);
+//				if (Sequence->AttackAnim.WeaponAnim)
+//				{
+//					OwnerCharacter->PlayAnimMontage(Sequence->AttackAnim.WeaponAnim, Sequence->AttackAnim.PlayRate);
+//				}
+//			}
+//
+//			return bCanAttack;
+//		}
+//	}
+//
+//	return false;
+//}
+
 bool ADSWeaponSwordBase::DoAttack()
 {
 	if (OwnerCharacter.IsValid())
 	{
+		bool bCanAttack = false;
+		const int32 NextCombo = CurrentCombo + 1;
 		FDSWeaponAttackSequence* Sequence = GetAttackSequence(CurrentCombo);
-		if (Sequence)
+		FDSWeaponAttackSequence* NextSequence = GetAttackSequence(NextCombo);
+
+		if (nullptr == Sequence)
 		{
-			bool bCanAttack = false;
-			if (!Sequence->IsAttacking())
+			// First attack
+			if (NextSequence)
 			{
 				bCanAttack = true;
 			}
-			else if (Sequence->CanCombo() && AttackSequence.IsValidIndex(CurrentCombo+1))
-			{
-				Sequence->Reset();
-				Sequence = GetAttackSequence(++CurrentCombo);
-				if (Sequence)
-				{
-					bCanAttack = true;
-				}
-			}
-
-			if (bCanAttack)
-			{
-				Sequence->Attack();
-				DisableCharacterMovement();
-				//OwnerCharacter->SetCharacterInputFlag(ADSCharacterBase::EActiveInputFlag::InputAll);
-				//OwnerCharacter->DisableCharacterInput(ADSCharacterBase::EActiveInputFlag::InputJump | ADSCharacterBase::EActiveInputFlag::InputEquipWeapon);
-				//GetWorldTimerManager().SetTimer(MoveInputTimer, this, &ADSWeaponSwordBase::DisableCharacterMovement, Sequence->GetMoveAllowTimeInterval(), false);
-				if (Sequence->AttackAnim.WeaponAnim)
-				{
-					OwnerCharacter->PlayAnimMontage(Sequence->AttackAnim.WeaponAnim, Sequence->AttackAnim.PlayRate);
-				}
-			}
-
-			return bCanAttack;
 		}
+		else
+		{
+			if (Sequence->CanCombo() && NextSequence)
+			{
+				// Reset current attack sequence
+				Sequence->Reset();
+				bCanAttack = true;
+			}
+		}
+
+		if (bCanAttack)
+		{
+			CurrentCombo = NextCombo;
+			
+			Sequence = NextSequence;
+			Sequence->Attack();
+			DisableCharacterMovement();
+			if (Sequence->AttackAnim.WeaponAnim)
+			{
+				OwnerCharacter->PlayAnimMontage(Sequence->AttackAnim.WeaponAnim, Sequence->AttackAnim.PlayRate);
+			}
+		}
+
+		return bCanAttack;
 	}
 
 	return false;
@@ -124,9 +181,9 @@ FDSWeaponAttackSequence* ADSWeaponSwordBase::GetAttackSequence(int32 Index)
 }
 
 
-void ADSWeaponSwordBase::TryAttack()
+void ADSWeaponSwordBase::TryAttack(uint8 TryAttackType)
 {
-	Super::TryAttack();
+	Super::TryAttack(TryAttackType);
 }
 
 void ADSWeaponSwordBase::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -139,7 +196,6 @@ void ADSWeaponSwordBase::PostNetReceive()
 {
 	Super::PostNetReceive();
 
-	CheckExpiredPendingAttack();
 }
 
 void ADSWeaponSwordBase::DisableCharacterMovement()
@@ -157,19 +213,6 @@ void ADSWeaponSwordBase::InternalUnequipped()
 	Super::InternalUnequipped();
 
 	AttackHitCheckHelper.Reset();
-}
-
-void ADSWeaponSwordBase::CheckExpiredPendingAttack()
-{
-	int32 ExpiredAttackIndex = 0;
-
-	for (auto& AttackInfo : PendingAttack)
-	{
-		//if (AttackInfo)
-		//{
-
-		//}
-	}
 }
 
 void FDSAttackHitCheckHelper::Initialize(ADSWeaponSwordBase * OwnerSwordWeapon)

@@ -36,8 +36,10 @@ struct FAttackSequenceReplicateData
 {
 	GENERATED_USTRUCT_BODY()
 
+	UPROPERTY()
 	int8 SequenceIndex;
 
+	UPROPERTY()
 	uint8 AttackType;
 
 	FAttackSequenceReplicateData()
@@ -46,9 +48,10 @@ struct FAttackSequenceReplicateData
 	{
 	}
 
-	bool IsExpired(int32 CurrentCombo) const
+	FAttackSequenceReplicateData(int8 NewSequenceIndex, uint8 NewAttackType)
+		: SequenceIndex(NewSequenceIndex)
+		, AttackType(NewAttackType)
 	{
-		return CurrentCombo <= SequenceIndex;
 	}
 
 };
@@ -83,7 +86,7 @@ public:
 public:
 	virtual bool CanAttack() const { return IsEquipped(); }
 	virtual bool ShouldResolvePendingAttack() const;
-	virtual void TryAttack();
+	virtual void TryAttack(uint8 TryAttackType = 1);
 
 protected:
 	virtual bool DoAttack() { return false; }
@@ -91,6 +94,7 @@ protected:
 	virtual void InternalEquipped() override;
 	virtual void InternalUnequipped() override;
 	void UpdatePendingAttack();
+	void CheckExpiredPendingAttack();
 
 public:
 	void WeaponArmed();
@@ -119,9 +123,16 @@ protected:
 	UPROPERTY(Transient, ReplicatedUsing=OnRep_WeaponArmed)
 	uint8 bWeaponArmed: 1;
 
+	UPROPERTY(Transient)
+	int32 CurrentCombo = 0;
+
 	// For simulated proxy
 	// TODO : Attack type 정의 ex) 강공격, 약공격, 대쉬 공격 등
 	UPROPERTY(Transient, Replicated)
-	TArray<uint8> PendingAttack;
+	TArray<FAttackSequenceReplicateData> PendingAttack;
+
+	//UPROPERTY(Transient, Replicated)
+	//TArray<uint8> PendingAttack;
+
 
 };

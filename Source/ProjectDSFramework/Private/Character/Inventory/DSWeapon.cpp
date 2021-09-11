@@ -16,6 +16,8 @@ ADSWeapon::ADSWeapon()
 
 	AttachSocketName = TEXT("weapon_r");
 	AttachSocketNameOnDeactivated = TEXT("weapon_unequipped");
+
+	CurrentCombo = INDEX_NONE;
 }
 
 void ADSWeapon::BeginPlay()
@@ -43,6 +45,7 @@ void ADSWeapon::PostNetReceive()
 {
 	Super::PostNetReceive();
 
+	//CheckExpiredPendingAttack();
 }
 
 void ADSWeapon::Tick(float DeltaTime)
@@ -65,20 +68,21 @@ bool ADSWeapon::ShouldResolvePendingAttack() const
 	bool bNeedResolve = false;
 	if (OwnerCharacter.IsValid())
 	{
-		bNeedResolve = (OwnerCharacter->GetLocalRole() == ROLE_SimulatedProxy) && PendingAttack.Num() > 0;
+		bNeedResolve = (OwnerCharacter->GetLocalRole() == ROLE_SimulatedProxy) && PendingAttack.Num() > 0 && CurrentCombo < PendingAttack.Last().SequenceIndex;
 	}
 
 	return bNeedResolve;
 }
 
-void ADSWeapon::TryAttack()
+void ADSWeapon::TryAttack(uint8 TryAttackType)
 {
 	if (DoAttack())
 	{
 		if (HasAuthority())
 		{
 			UE_LOG(LogClass, Warning, TEXT("[WeaponDebugLog] Add pending attack !!"));
-			PendingAttack.Add(1);
+			//PendingAttack.Add(1);
+			PendingAttack.Add(FAttackSequenceReplicateData(CurrentCombo, TryAttackType));
 			ForceNetUpdate();
 		}
 	}
@@ -110,9 +114,24 @@ void ADSWeapon::UpdatePendingAttack()
 		if (DoAttack())
 		{
 			UE_LOG(LogClass, Warning, TEXT("[WeaponDebugLog] Resolve pending attack on %s!!"), HasAuthority() ? TEXT("Authority") : TEXT("Simulated"));
-			PendingAttack.RemoveAtSwap(0);
+			//PendingAttack.RemoveAtSwap(0);
 		}
 	}
+}
+
+void ADSWeapon::CheckExpiredPendingAttack()
+{
+	TWeakObjectPtr<ADSWeapon> WeakThis(this);
+	PendingAttack.RemoveAllSwap([WeakThis](const FAttackSequenceReplicateData& NewData) -> bool {
+
+		ADSWeapon* Self = WeakThis.Get();
+		if (IsValid(Self))
+		{
+			return NewData.SequenceIndex <= Self->CurrentCombo;
+		}
+
+		return false;
+		}, true);
 }
 
 void ADSWeapon::WeaponArmed()

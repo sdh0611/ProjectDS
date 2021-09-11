@@ -166,7 +166,7 @@ public:
 	// Called every frame
 	virtual bool CanAttack() const override;
 	const FDSWeaponAttackSequence* GetAttackSequence(int32 Index) const;
-	virtual void TryAttack() override;
+	virtual void TryAttack(uint8 TryAttackType = 1) override;
 
 	// ~ Begin AActor Interface
 	/** Returns the properties used for network replication, this needs to be overridden by all actor classes with native replicated properties */
@@ -178,7 +178,6 @@ public:
 protected:
 	virtual bool DoAttack() override;
 	virtual void InternalUnequipped() override;
-	void CheckExpiredPendingAttack();
 
 private:
 	FDSWeaponAttackSequence* GetAttackSequence(int32 Index);
@@ -196,9 +195,6 @@ protected:
 
 	UPROPERTY(EditDefaultsOnly)
 	TArray<FDSWeaponAttackSequence> AttackSequence;
-
-	UPROPERTY(Transient)
-	int32 CurrentCombo = 0;
 
 
 };
