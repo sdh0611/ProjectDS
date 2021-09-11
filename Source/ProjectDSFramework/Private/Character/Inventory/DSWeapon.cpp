@@ -29,6 +29,7 @@ void ADSWeapon::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetim
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 	
 	DOREPLIFETIME(ADSWeapon, bWeaponArmed);
+	DOREPLIFETIME_CONDITION(ADSWeapon, PendingAttack, COND_SkipOwner);
 }
 
 void ADSWeapon::PreReplication(IRepChangedPropertyTracker & ChangedPropertyTracker)
@@ -38,6 +39,12 @@ void ADSWeapon::PreReplication(IRepChangedPropertyTracker & ChangedPropertyTrack
 	//DOREPLIFETIME_ACTIVE_OVERRIDE(ADSWeapon, bWeaponArmed, IsEquipped());
 }
 
+void ADSWeapon::PostNetReceive()
+{
+	Super::PostNetReceive();
+
+}
+
 void ADSWeapon::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
@@ -45,6 +52,35 @@ void ADSWeapon::Tick(float DeltaTime)
 	if (IsEquipped())
 	{
 		InternalUpdateWeapon(DeltaTime);
+	}
+
+	if (ShouldResolvePendingAttack())
+	{
+		UpdatePendingAttack();
+	}
+}
+
+bool ADSWeapon::ShouldResolvePendingAttack() const
+{
+	bool bNeedResolve = false;
+	if (OwnerCharacter.IsValid())
+	{
+		bNeedResolve = (OwnerCharacter->GetLocalRole() == ROLE_SimulatedProxy) && PendingAttack.Num() > 0;
+	}
+
+	return bNeedResolve;
+}
+
+void ADSWeapon::TryAttack()
+{
+	if (DoAttack())
+	{
+		if (HasAuthority())
+		{
+			UE_LOG(LogClass, Warning, TEXT("[WeaponDebugLog] Add pending attack !!"));
+			PendingAttack.Add(1);
+			ForceNetUpdate();
+		}
 	}
 }
 
@@ -67,6 +103,18 @@ void ADSWeapon::InternalUnequipped()
 
 }
 
+void ADSWeapon::UpdatePendingAttack()
+{
+	if (PendingAttack.Num() > 0)
+	{
+		if (DoAttack())
+		{
+			UE_LOG(LogClass, Warning, TEXT("[WeaponDebugLog] Resolve pending attack on %s!!"), HasAuthority() ? TEXT("Authority") : TEXT("Simulated"));
+			PendingAttack.RemoveAtSwap(0);
+		}
+	}
+}
+
 void ADSWeapon::WeaponArmed()
 {
 	if (OwnerCharacter.IsValid() && OwnerCharacter->GetMesh())
@@ -75,7 +123,6 @@ void ADSWeapon::WeaponArmed()
 		{
 			OwnerCharacter->PlayAnimMontage(EquipAnim);
 		}
-
 	}
 }
 
@@ -98,6 +145,7 @@ void ADSWeapon::SetWeaponArmed(bool bIsArmed)
 		OnRep_WeaponArmed();
 	}
 }
+
 
 void ADSWeapon::OnRep_WeaponArmed()
 {

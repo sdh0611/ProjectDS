@@ -117,7 +117,6 @@ private:
 	float HitCheckInterval;
 
 	TWeakObjectPtr<class ADSWeaponSwordBase> OwnerPrivate;
-	TArray<FVector> PrevAttackTraceFootstep;
 	TArray<FVector> AttackTraceFootstep;
 	FCollisionQueryParams CollisionQuery;
 	float ElapsedTime = 0.f;
@@ -139,7 +138,6 @@ public:
 private:
 	void UpdateAttackTraceFootstep();
 	void HitCheck();
-	void CacheAttackTraceFootstep();
 
 };
 
@@ -155,7 +153,10 @@ public:
 	ADSWeaponSwordBase();
 
 protected:
+	// ~ Begin AActor Interface
 	virtual void BeginPlay() override;
+	// ~ End AActor Interface
+	
 	virtual void InternalUpdateWeapon(float DeltaTime) override;
 
 private:
@@ -163,22 +164,25 @@ private:
 
 public:
 	// Called every frame
-	virtual void Tick(float DeltaTime) override;
 	virtual bool CanAttack() const override;
-	virtual void DoAttack() override;
 	const FDSWeaponAttackSequence* GetAttackSequence(int32 Index) const;
-	FVector GetSocketLocation(const FName& SocketName);
+	virtual void TryAttack() override;
+
+	// ~ Begin AActor Interface
+	/** Returns the properties used for network replication, this needs to be overridden by all actor classes with native replicated properties */
+	void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
+	/** Always called immediately after properties are received from the remote. */
+	virtual void PostNetReceive() override;
+	// ~ End AActor Interface
 
 protected:
+	virtual bool DoAttack() override;
 	virtual void InternalUnequipped() override;
+	void CheckExpiredPendingAttack();
 
 private:
 	FDSWeaponAttackSequence* GetAttackSequence(int32 Index);
 	void DisableCharacterMovement();
-
-	// {{ Weapon attack check
-	void CheckAttackHit(float DeltaTime);
-	// }} Weapon attack check
 
 public:
 	FTimerHandle MoveInputTimer;

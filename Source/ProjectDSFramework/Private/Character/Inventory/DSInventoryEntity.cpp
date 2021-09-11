@@ -24,7 +24,8 @@ void ADSInventoryEntity::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& O
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
-	DOREPLIFETIME_CONDITION(ADSInventoryEntity, OwnerCharacter, COND_OwnerOnly);
+	//DOREPLIFETIME_CONDITION(ADSInventoryEntity, OwnerCharacter, COND_OwnerOnly);
+	DOREPLIFETIME(ADSInventoryEntity, OwnerCharacter);
 }
 
 void ADSInventoryEntity::GivenTo(ADSCharacterBase * NewOwner)

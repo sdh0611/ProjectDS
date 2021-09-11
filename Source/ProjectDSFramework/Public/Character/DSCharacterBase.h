@@ -131,6 +131,9 @@ protected:
 	UFUNCTION(Server, Reliable, WithValidation)
 	void ServerToggleWeapon();
 
+	UFUNCTION(Server, Reliable, WithValidation)
+	void ServerDoAttack();
+
 public:
 	static FName SpringArmComponentName;
 	static FName CameraComponentName;

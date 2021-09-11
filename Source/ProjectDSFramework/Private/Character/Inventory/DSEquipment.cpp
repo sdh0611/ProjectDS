@@ -65,6 +65,16 @@ void ADSEquipment::Unequipped()
 	}
 }
 
+FVector ADSEquipment::GetSocketLocation(const FName & SocketName)
+{
+	if (BodyMesh)
+	{
+		return BodyMesh->GetSocketLocation(SocketName);
+	}
+
+	return FVector::ZeroVector;
+}
+
 void ADSEquipment::GivenTo(ADSCharacterBase * NewOwner)
 {
 	Super::GivenTo(NewOwner);

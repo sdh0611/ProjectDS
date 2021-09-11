@@ -1,4 +1,4 @@
-// All rights reserve SDH (2021 ~ )
+﻿// All rights reserve SDH (2021 ~ )
 
 #pragma once
 
@@ -31,6 +31,28 @@ public:
 	}
 };
 
+USTRUCT()
+struct FAttackSequenceReplicateData
+{
+	GENERATED_USTRUCT_BODY()
+
+	int8 SequenceIndex;
+
+	uint8 AttackType;
+
+	FAttackSequenceReplicateData()
+		: SequenceIndex(INDEX_NONE)
+		, AttackType(0)
+	{
+	}
+
+	bool IsExpired(int32 CurrentCombo) const
+	{
+		return CurrentCombo <= SequenceIndex;
+	}
+
+};
+
 /**
  * 
  */
@@ -53,17 +75,22 @@ public:
 	 * Only called on Server, and for autonomous proxies if recording a Client Replay.
 	 */
 	virtual void PreReplication(IRepChangedPropertyTracker & ChangedPropertyTracker) override;
+	/** Always called immediately after properties are received from the remote. */
+	virtual void PostNetReceive() override;
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 
 public:
 	virtual bool CanAttack() const { return IsEquipped(); }
-	virtual void DoAttack() { }
+	virtual bool ShouldResolvePendingAttack() const;
+	virtual void TryAttack();
 
 protected:
+	virtual bool DoAttack() { return false; }
 	virtual void InternalUpdateWeapon(float DeltaTime);
 	virtual void InternalEquipped() override;
 	virtual void InternalUnequipped() override;
+	void UpdatePendingAttack();
 
 public:
 	void WeaponArmed();
@@ -91,5 +118,10 @@ protected:
 protected:
 	UPROPERTY(Transient, ReplicatedUsing=OnRep_WeaponArmed)
 	uint8 bWeaponArmed: 1;
+
+	// For simulated proxy
+	// TODO : Attack type 정의 ex) 강공격, 약공격, 대쉬 공격 등
+	UPROPERTY(Transient, Replicated)
+	TArray<uint8> PendingAttack;
 
 };

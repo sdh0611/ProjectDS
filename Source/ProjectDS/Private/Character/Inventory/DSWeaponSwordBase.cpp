@@ -4,6 +4,8 @@
 #include "DSWeaponSwordBase.h"
 #include "DSCharacterBase.h"
 #include "DrawDebugHelpers.h"
+#include "Net/UnrealNetwork.h"
+#include "..\..\..\Public\Character\Inventory\DSWeaponSwordBase.h"
 
 
 ADSWeaponSwordBase::ADSWeaponSwordBase()
@@ -23,7 +25,10 @@ void ADSWeaponSwordBase::InternalUpdateWeapon(float DeltaTime)
 
 	UpdateAttackSequence(DeltaTime);
 
-	AttackHitCheckHelper.Update(DeltaTime);
+	if (!IsNetMode(NM_Client))
+	{
+		AttackHitCheckHelper.Update(DeltaTime);
+	}
 }
 
 void ADSWeaponSwordBase::UpdateAttackSequence(float DeltaTime)
@@ -39,6 +44,8 @@ void ADSWeaponSwordBase::UpdateAttackSequence(float DeltaTime)
 			{
 				OwnerCharacter->EnableCharacterInput(ADSCharacterBase::EActiveInputFlag::InputAll);
 			}
+
+			PendingAttack.Empty();
 		}
 		else
 		{
@@ -47,21 +54,14 @@ void ADSWeaponSwordBase::UpdateAttackSequence(float DeltaTime)
 	}
 }
 
-void ADSWeaponSwordBase::Tick(float DeltaTime)
-{
-	Super::Tick(DeltaTime);
-
-}
-
 bool ADSWeaponSwordBase::CanAttack() const
 {
 	const bool bCanAttack = Super::CanAttack() && IsWeaponArmed();
 
 	return bCanAttack;
-	//return CurrentCombo < AttackSequence.Num();
 }
 
-void ADSWeaponSwordBase::DoAttack()
+bool ADSWeaponSwordBase::DoAttack()
 {
 	if (OwnerCharacter.IsValid())
 	{
@@ -95,9 +95,12 @@ void ADSWeaponSwordBase::DoAttack()
 					OwnerCharacter->PlayAnimMontage(Sequence->AttackAnim.WeaponAnim, Sequence->AttackAnim.PlayRate);
 				}
 			}
+
+			return bCanAttack;
 		}
 	}
 
+	return false;
 }
 
 const FDSWeaponAttackSequence* ADSWeaponSwordBase::GetAttackSequence(int32 Index) const
@@ -120,6 +123,25 @@ FDSWeaponAttackSequence* ADSWeaponSwordBase::GetAttackSequence(int32 Index)
 	return nullptr;
 }
 
+
+void ADSWeaponSwordBase::TryAttack()
+{
+	Super::TryAttack();
+}
+
+void ADSWeaponSwordBase::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+
+}
+
+void ADSWeaponSwordBase::PostNetReceive()
+{
+	Super::PostNetReceive();
+
+	CheckExpiredPendingAttack();
+}
+
 void ADSWeaponSwordBase::DisableCharacterMovement()
 {
 	if (OwnerCharacter.IsValid())
@@ -130,16 +152,6 @@ void ADSWeaponSwordBase::DisableCharacterMovement()
 	}
 }
 
-FVector ADSWeaponSwordBase::GetSocketLocation(const FName & SocketName)
-{
-	if (BodyMesh)
-	{
-		return BodyMesh->GetSocketLocation(SocketName);
-	}
-
-	return FVector::ZeroVector;
-}
-
 void ADSWeaponSwordBase::InternalUnequipped()
 {
 	Super::InternalUnequipped();
@@ -147,10 +159,17 @@ void ADSWeaponSwordBase::InternalUnequipped()
 	AttackHitCheckHelper.Reset();
 }
 
-void ADSWeaponSwordBase::CheckAttackHit(float DeltaTime)
+void ADSWeaponSwordBase::CheckExpiredPendingAttack()
 {
+	int32 ExpiredAttackIndex = 0;
 
+	for (auto& AttackInfo : PendingAttack)
+	{
+		//if (AttackInfo)
+		//{
 
+		//}
+	}
 }
 
 void FDSAttackHitCheckHelper::Initialize(ADSWeaponSwordBase * OwnerSwordWeapon)
@@ -163,7 +182,6 @@ void FDSAttackHitCheckHelper::Initialize(ADSWeaponSwordBase * OwnerSwordWeapon)
 		CollisionQuery.bTraceComplex = false;
 	}
 	AttackTraceFootstep.AddZeroed(HitCheckTraceNum);
-	PrevAttackTraceFootstep.AddZeroed(HitCheckTraceNum);
 }
 
 void FDSAttackHitCheckHelper::Reset()
@@ -173,12 +191,11 @@ void FDSAttackHitCheckHelper::Reset()
 
 	CollisionQuery.ClearIgnoredActors();
 		
-	if (AttackTraceFootstep.Num() == HitCheckTraceNum && PrevAttackTraceFootstep.Num() == HitCheckTraceNum)
+	if (AttackTraceFootstep.Num() == HitCheckTraceNum)
 	{
 		for (int32 Index = 0; Index < HitCheckTraceNum; ++Index)
 		{
 			AttackTraceFootstep[Index] = FVector::ZeroVector;
-			PrevAttackTraceFootstep[Index] = FVector::ZeroVector;
 		}
 	}
 }
@@ -193,15 +210,8 @@ void FDSAttackHitCheckHelper::Update(float DeltaTime)
 		}
 		else
 		{
-			// Update current trace location
-			UpdateAttackTraceFootstep();
-
 			// Do hit check
 			HitCheck();
-
-			// Cache trace location
-			CacheAttackTraceFootstep();
-
 			ElapsedTime = 0.f;
 		}
 	}
@@ -210,7 +220,7 @@ void FDSAttackHitCheckHelper::Update(float DeltaTime)
 void FDSAttackHitCheckHelper::HitCheckStart()
 {
 	// Prepare new attack sequence hit check
-	UE_LOG(LogClass, Warning, TEXT("[HitCheckDebugLog] AttackCheckStart"));
+	//UE_LOG(LogClass, Warning, TEXT("[HitCheckDebugLog] AttackCheckStart"));
 
 	// Add ignored actor
 	if (OwnerPrivate.IsValid())
@@ -220,7 +230,6 @@ void FDSAttackHitCheckHelper::HitCheckStart()
 
 	// Initialize trace locaiton
 	UpdateAttackTraceFootstep();
-	CacheAttackTraceFootstep();
 
 	// Set active
 	bActive = true;
@@ -228,7 +237,7 @@ void FDSAttackHitCheckHelper::HitCheckStart()
 
 void FDSAttackHitCheckHelper::HitCheckEnd()
 {
-	UE_LOG(LogClass, Warning, TEXT("[HitCheckDebugLog] AttackCheckEnd"));
+	//UE_LOG(LogClass, Warning, TEXT("[HitCheckDebugLog] AttackCheckEnd"));
 	Reset();
 }
 
@@ -257,6 +266,7 @@ void FDSAttackHitCheckHelper::UpdateAttackTraceFootstep()
 			}
 		}
 	}
+
 }
 
 void FDSAttackHitCheckHelper::HitCheck()
@@ -266,37 +276,34 @@ void FDSAttackHitCheckHelper::HitCheck()
 		UWorld* World = OwnerPrivate->GetWorld();
 		if (World)
 		{
+			// Cache last trace location
+			const TArray<FVector> PrevAttackTraceFootstep = AttackTraceFootstep;
+			// Update current trace location
+			UpdateAttackTraceFootstep();
+
 			TArray<FHitResult> Hits;
 			for (int32 Index = 0; Index < HitCheckTraceNum; ++Index)
 			{
 				World->LineTraceMultiByChannel(Hits, PrevAttackTraceFootstep[Index], AttackTraceFootstep[Index], ECollisionChannel::ECC_GameTraceChannel1, CollisionQuery);
 				if (Hits.Num() > 0)
 				{
+					AController* const AttackInstigator = OwnerPrivate->GetInventoryEntityOwner() ? OwnerPrivate->GetInventoryEntityOwner()->GetController() : nullptr;
 					for (FHitResult& Hit : Hits)
 					{
 						if (Hit.Actor.IsValid())
 						{
-							UE_LOG(LogClass, Warning, TEXT("[HitCheckDebugLog|%f] Hit actor : %s, Hit component : %s !!!"), World->GetTimeSeconds(), *(Hit.Actor->GetName()), *(Hit.Component.IsValid() ? Hit.Component->GetName() : FString()));
-							Hit.Actor->TakeDamage(0.f, FPointDamageEvent(), nullptr, OwnerPrivate.Get());
+							//UE_LOG(LogClass, Warning, TEXT("[HitCheckDebugLog|%f] Hit actor : %s, Hit component : %s !!!"), World->GetTimeSeconds(), *(Hit.Actor->GetName()), *(Hit.Component.IsValid() ? Hit.Component->GetName() : FString()));
+							Hit.Actor->TakeDamage(0.f, FPointDamageEvent(), AttackInstigator, OwnerPrivate.Get());
+
+							// Add hit actor to ignored
 							CollisionQuery.AddIgnoredActor(Hit.Actor.Get());
 						}
 					}
 				}
+
 				DrawDebugLine(World, PrevAttackTraceFootstep[Index], AttackTraceFootstep[Index], FColor::Red, true, 5.f);
 			}
 		}
 	}
-}
 
-void FDSAttackHitCheckHelper::CacheAttackTraceFootstep()
-{
-	check(PrevAttackTraceFootstep.Num() == HitCheckTraceNum);
-
-	if (AttackTraceFootstep.Num() == HitCheckTraceNum && PrevAttackTraceFootstep.Num() == HitCheckTraceNum)
-	{
-		for (int32 Index = 0; Index < HitCheckTraceNum; ++Index)
-		{
-			PrevAttackTraceFootstep[Index] = AttackTraceFootstep[Index];
-		}
-	}
 }

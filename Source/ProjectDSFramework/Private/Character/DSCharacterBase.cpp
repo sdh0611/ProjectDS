@@ -280,11 +280,19 @@ void ADSCharacterBase::ToggleWeapon()
 
 void ADSCharacterBase::Attack()
 {
-	if (IsMoveInputAllowed(EActiveInputFlag::InputAttack))
+	// Contain autonomous proxy, authority
+	if (GetLocalRole() > ROLE_SimulatedProxy)
 	{
-		if (IsValid(CurrentWeapon) && CurrentWeapon->CanAttack())
+		if (IsMoveInputAllowed(EActiveInputFlag::InputAttack))
 		{
-			CurrentWeapon->DoAttack();
+			if (IsValid(CurrentWeapon) && CurrentWeapon->CanAttack())
+			{
+				CurrentWeapon->TryAttack();
+				if (IsNetMode(NM_Client))
+				{
+					ServerDoAttack();
+				}
+			}
 		}
 	}
 }
@@ -455,4 +463,14 @@ void ADSCharacterBase::ServerToggleWeapon_Implementation()
 	{
 		CurrentWeapon->SetWeaponArmed(!CurrentWeapon->IsWeaponArmed());
 	}
+}
+
+bool ADSCharacterBase::ServerDoAttack_Validate()
+{
+	return true;
+}
+
+void ADSCharacterBase::ServerDoAttack_Implementation()
+{
+	Attack();
 }

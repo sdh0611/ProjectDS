@@ -30,6 +30,7 @@ public:
 	virtual void GivenTo(ADSCharacterBase* NewOwner) override;
 	void Equipped();
 	void Unequipped();
+	FVector GetSocketLocation(const FName& SocketName);
 
 protected:
 	virtual void InternalDiscard() override;
