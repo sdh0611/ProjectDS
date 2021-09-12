@@ -1,4 +1,4 @@
-﻿// All rights reserve SDH (2021 ~ )
+﻿// SDH, All rights reserved. (2021 ~ )
 
 
 #include "DSWeaponSwordBase.h"

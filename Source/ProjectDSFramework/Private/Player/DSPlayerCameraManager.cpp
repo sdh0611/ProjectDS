@@ -1,5 +1,19 @@
-// All rights reserve SDH (2021 ~ )
+// SDH, All rights reserved. (2021 ~ )
 
 
-#include "Player/DSPlayerCameraManager.h"
+#include "DSPlayerCameraManager.h"
+#include "DSCharacterBase.h"
+#include "DSPlayerControllerBase.h"
 
+void ADSPlayerCameraManager::SetTarget(APawn * NewTarget)
+{
+	if (IsValid(NewTarget))
+	{
+		TargetPawn = NewTarget;
+	}
+}
+
+void ADSPlayerCameraManager::ReleaseTarget()
+{
+	TargetPawn.Reset();
+}

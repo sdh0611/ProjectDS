@@ -1,4 +1,4 @@
-// All rights reserve SDH (2021 ~ )
+// SDH, All rights reserved. (2021 ~ )
 
 
 #include "DSCharacterBase.h"
@@ -116,6 +116,8 @@ void ADSCharacterBase::SetupPlayerInputComponent(UInputComponent* PlayerInputCom
 		PlayerInputComponent->BindAction<FActionInputDelegate>(TEXT("Sprint"), EInputEvent::IE_Released, this, &ADSCharacterBase::Sprint, false);
 		PlayerInputComponent->BindAction<FActionInputDelegate>(TEXT("Walk"), EInputEvent::IE_Pressed, this, &ADSCharacterBase::Walk, true);
 		PlayerInputComponent->BindAction<FActionInputDelegate>(TEXT("Walk"), EInputEvent::IE_Released, this, &ADSCharacterBase::Walk, false);
+		PlayerInputComponent->BindAction<FActionInputDelegate>(TEXT("Guard"), EInputEvent::IE_Pressed, this, &ADSCharacterBase::Guard, true);
+		PlayerInputComponent->BindAction<FActionInputDelegate>(TEXT("Guard"), EInputEvent::IE_Released, this, &ADSCharacterBase::Guard, false);
 	}
 
 }
@@ -295,6 +297,12 @@ void ADSCharacterBase::Attack()
 			}
 		}
 	}
+}
+
+void ADSCharacterBase::Guard(bool bGuard)
+{
+
+
 }
 
 void ADSCharacterBase::EquipWeapon(ADSWeapon * Equipped)

@@ -1,4 +1,4 @@
-// All rights reserve SDH (2021 ~ )
+// SDH, All rights reserved. (2021 ~ )
 
 #pragma once
 
@@ -14,4 +14,12 @@ class PROJECTDSFRAMEWORK_API ADSPlayerCameraManager : public APlayerCameraManage
 {
 	GENERATED_BODY()
 	
+public:
+	void SetTarget(APawn* NewTarget);
+	void ReleaseTarget();
+	FORCEINLINE bool IsTargeting() { return TargetPawn.IsValid(); }
+
+private:
+	TWeakObjectPtr<class APawn> TargetPawn;
+
 };

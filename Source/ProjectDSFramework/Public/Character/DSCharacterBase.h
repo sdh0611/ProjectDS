@@ -1,4 +1,4 @@
-// All rights reserve SDH (2021 ~ )
+// SDH, All rights reserved. (2021 ~ )
 
 #pragma once
 
@@ -110,6 +110,7 @@ protected:
 	void ToggleCrouch();
 	void ToggleWeapon();
 	void Attack();
+	void Guard(bool bGuard);
 
 public:
 	virtual void EquipWeapon(ADSWeapon* Equipped);
