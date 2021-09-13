@@ -34,10 +34,15 @@ public:
 
 protected:
 	// ~Begin ADSPlayerControllerBase Interface
-	void LockOnTarget(bool bLockOn);
+	void LockOnTarget();
 	APawn* GetTargetOnScreen();
 	void SetTarget(APawn* NewTarget);
 	void ReleaseTarget();
+	// ~End ADSPlayerControllerBase Interface
+
+public:
+	// ~Begin ADSPlayerControllerBase Interface
+	bool IsTargeting() const;
 	// ~End ADSPlayerControllerBase Interface
 
 protected:
@@ -46,6 +51,10 @@ protected:
 	// }} Input binding delegates
 
 private:
+	UPROPERTY(Transient)
 	class ADSPlayerCameraManager* DSPlayerCameraManager;
+
+public:
+	static const uint16 RotationInputFlag;
 
 };
