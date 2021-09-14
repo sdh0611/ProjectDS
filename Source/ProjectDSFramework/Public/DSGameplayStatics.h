@@ -13,7 +13,8 @@ UCLASS()
 class PROJECTDSFRAMEWORK_API UDSGameplayStatics : public UGameplayStatics
 {
 	GENERATED_BODY()
-	
 
+public:
+	static bool WasActorRecentlyRendered(AActor* CheckActor, float Tolerance = 0.2f);
 
 };

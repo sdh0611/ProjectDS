@@ -7,8 +7,10 @@
 #include "DSPlayerCameraManager.h"
 #include "DSCharacterBase.h"
 #include "EngineUtils.h"
+#include "DrawDebugHelpers.h"
+#include "GameFramework/HUD.h"
+//#include "DSHUD.h"
 
-const uint16 ADSPlayerControllerBase::RotationInputFlag = ADSCharacterBase::EActiveInputFlag::InputTurn | ADSCharacterBase::EActiveInputFlag::InputLookUp;
 
 ADSPlayerControllerBase::ADSPlayerControllerBase()
 {
@@ -59,33 +61,110 @@ void ADSPlayerControllerBase::SpawnPlayerCameraManager()
 
 }
 
-void ADSPlayerControllerBase::LockOnTarget()
+void ADSPlayerControllerBase::TickActor(float DeltaTime, ELevelTick TickType, FActorTickFunction & ThisTickFunction)
 {
+	Super::TickActor(DeltaTime, TickType, ThisTickFunction);
+
 	if (IsTargeting())
 	{
-		ReleaseTarget();
-	}
-	else
-	{
-		APawn* Target = GetTargetOnScreen();
-		SetTarget(Target);
+		UpdateTargetState();
 	}
 }
 
-APawn * ADSPlayerControllerBase::GetTargetOnScreen()
+APawn * ADSPlayerControllerBase::GetNearestTargetOnScreen()
 {
-	// Test code
-	// TODO : Check screen rendered
-	APawn* TargetPawn = nullptr;
+	int32 ViewportWidth, ViewportHeight;
 
+	GetViewportSize(ViewportWidth, ViewportHeight);
+	if (ViewportWidth == 0 || ViewportHeight == 0)
+	{
+		// Occur undefined behavior 
+		return nullptr;
+	}
+
+	// Make target search box on screen
+	const FVector2D BoxCenter((float)ViewportWidth / 2.f, (float)ViewportHeight / 2.f);
+	const FVector2D BoxMin(BoxCenter.X * (1.f - TargetSearchBoxHalfWidthRate), BoxCenter.Y * (1.f - TargetSearchBoxHalfHeightRate));
+	const FVector2D BoxMax(BoxCenter.X *(1.f + TargetSearchBoxHalfWidthRate), BoxCenter.Y * (1.f + TargetSearchBoxHalfHeightRate));
+	const FBox2D SearchBox(BoxMin, BoxMax);
+
+	// The pawn bounds point mapping
+	const FVector BoundsPointMapping[8] =
+	{
+		FVector(1.f, 1.f, 1.f),
+		FVector(1.f, 1.f, -1.f),
+		FVector(1.f, -1.f, 1.f),
+		FVector(1.f, -1.f, -1.f),
+		FVector(-1.f, 1.f, 1.f),
+		FVector(-1.f, 1.f, -1.f),
+		FVector(-1.f, -1.f, 1.f),
+		FVector(-1.f, -1.f, -1.f), 
+	};
+
+	// Find nearest target in search box on screen
+	APawn* TargetPawn = nullptr;
+	const float MaxDistanceSquared = CheckTargetMaxDistance * CheckTargetMaxDistance;
+	const APawn* Possessed = GetPawn();
+	float ShortestDistanceSquared = -1.f;
 	if (GetWorld())
 	{
 		for (TActorIterator<APawn> PawnIter(GetWorld()); PawnIter; ++PawnIter)
 		{
-			if (*PawnIter != GetPawn())
+			if (IsValid(*PawnIter))
 			{
-				TargetPawn = *PawnIter;
-				break;
+				// Skip possessed pawn
+				if (*PawnIter == Possessed)
+				{
+					continue;
+				}
+
+				// Skip pawn too far
+				const float DistSquared = FVector::DistSquared2D((*PawnIter)->GetActorLocation(), Possessed->GetActorLocation());
+				if (DistSquared > MaxDistanceSquared)
+				{
+					continue;
+				}
+				
+				FVector BoundOrigin, BoundExtents;
+				(*PawnIter)->GetActorBounds(true, BoundOrigin, BoundExtents);
+				if (!BoundOrigin.IsNearlyZero() && !BoundExtents.IsNearlyZero())
+				{
+					FBox2D PawnBoundBox(ForceInit);
+					bool bCompleteMakeBoundBox = true;
+					for (uint8 Index = 0; Index < 8; ++Index)
+					{
+						FVector2D Projected;
+						if (ProjectWorldLocationToScreen(BoundOrigin + (BoundsPointMapping[Index] * BoundExtents), Projected))
+						{
+							PawnBoundBox += Projected;
+						}
+						else
+						{
+							bCompleteMakeBoundBox = false;
+							break;
+						}
+					}
+
+					if (bCompleteMakeBoundBox)
+					{
+						// {{ Debug
+						//if (GetHUD())
+						//{
+						//	GetHUD()->DrawRect(FLinearColor(FColor(255, 0, 0)), PawnBoundBox.GetCenter().X, PawnBoundBox.GetCenter().Y, PawnBoundBox.GetSize().X, PawnBoundBox.GetSize().Y);
+						//	GetHUD()->DrawRect(FLinearColor(FColor(0, 255, 0)), SearchBox.GetCenter().X, SearchBox.GetCenter().Y, SearchBox.GetSize().X, SearchBox.GetSize().Y);
+						//}
+						// }} Debug
+
+						if (SearchBox.Intersect(PawnBoundBox))
+						{
+							if (ShortestDistanceSquared < 0.f || ShortestDistanceSquared > DistSquared)
+							{
+								ShortestDistanceSquared = DistSquared;
+								TargetPawn = (*PawnIter);
+							}
+						}
+					}
+				}
 			}
 		}
 	}
@@ -102,21 +181,16 @@ void ADSPlayerControllerBase::SetTarget(APawn * NewTarget)
 		ADSCharacterBase* Possessed = GetPawn<ADSCharacterBase>();
 		if (IsValid(Possessed))
 		{
-			Possessed->DisableCharacterInput(RotationInputFlag);
+			Possessed->OnOwnerLockedOnTarget();
 		}
 	}
 }
 
-void ADSPlayerControllerBase::ReleaseTarget()
+void ADSPlayerControllerBase::UpdateTargetState()
 {
-	if (DSPlayerCameraManager)
+	if (DSPlayerCameraManager && IsValid(GetPawn()))
 	{
-		DSPlayerCameraManager->ReleaseTarget();
-		ADSCharacterBase* Possessed = GetPawn<ADSCharacterBase>();
-		if (IsValid(Possessed))
-		{
-			Possessed->EnableCharacterInput(RotationInputFlag);
-		}
+		DSPlayerCameraManager->UpdateTargetState(CheckTargetMaxDistance, GetPawn()->GetActorLocation());
 	}
 }
 
@@ -128,4 +202,30 @@ bool ADSPlayerControllerBase::IsTargeting() const
 	}
 
 	return false;
+}
+
+void ADSPlayerControllerBase::LockOnTarget()
+{
+	if (IsTargeting())
+	{
+		ReleaseTarget();
+	}
+	else
+	{
+		APawn* Target = GetNearestTargetOnScreen();
+		SetTarget(Target);
+	}
+}
+
+void ADSPlayerControllerBase::ReleaseTarget()
+{
+	if (DSPlayerCameraManager)
+	{
+		DSPlayerCameraManager->ReleaseTarget();
+		ADSCharacterBase* Possessed = GetPawn<ADSCharacterBase>();
+		if (IsValid(Possessed))
+		{
+			Possessed->OnOwnerReleasedTarget();
+		}
+	}
 }

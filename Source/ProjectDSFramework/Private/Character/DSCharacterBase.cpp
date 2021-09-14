@@ -17,6 +17,7 @@
 FName ADSCharacterBase::SpringArmComponentName = TEXT("SpringArm");
 FName ADSCharacterBase::CameraComponentName = TEXT("Camera");
 FName ADSCharacterBase::CharacterStatComponentName = TEXT("CharacterStat");
+const uint16 ADSCharacterBase::RotationInputFlag = ADSCharacterBase::EActiveInputFlag::InputTurn | ADSCharacterBase::EActiveInputFlag::InputLookUp;
 
 // Sets default values
 ADSCharacterBase::ADSCharacterBase(const FObjectInitializer& ObjectInitializer)
@@ -62,7 +63,7 @@ void ADSCharacterBase::BeginPlay()
 			EquipWeapon(TestWeapon);
 		}
 	}
-	//}} End test weapon 
+	// }} End test weapon 
 
 }
 
@@ -125,9 +126,14 @@ void ADSCharacterBase::SetupPlayerInputComponent(UInputComponent* PlayerInputCom
 void ADSCharacterBase::Falling()
 {
 	Super::Falling();
-	
+
 	const uint16 InputFlagToDIsable = (EActiveInputFlag::InputJump | EActiveInputFlag::InputEquipWeapon);
 	DisableCharacterInput(InputFlagToDIsable);
+	if (DSMovement)
+	{
+		DSMovement->bOrientRotationToMovement = false;
+	}
+
 }
 
 void ADSCharacterBase::SetSprinting(bool bSprint)
@@ -351,12 +357,38 @@ void ADSCharacterBase::OnRep_CurrentWeapon()
 	ArmWeapon();
 }
 
+bool ADSCharacterBase::ServerLockOnTarget_Validate(bool bLockOn)
+{
+	return true;
+}
+
+void ADSCharacterBase::ServerLockOnTarget_Implementation(bool bLockOn)
+{
+	if (bLockOn)
+	{
+		OnOwnerLockedOnTarget();
+	}
+	else
+	{
+		OnOwnerReleasedTarget();
+	}
+}
+
 void ADSCharacterBase::Landed(const FHitResult & Hit)
 {
 	Super::Landed(Hit);
 
 	const uint16 MoveInputToEnable = (EActiveInputFlag::InputJump | EActiveInputFlag::InputEquipWeapon);
 	EnableCharacterInput(MoveInputToEnable);
+
+	ADSPlayerControllerBase* Possessor = GetController<ADSPlayerControllerBase>();
+	if (IsValid(Possessor) && !Possessor->IsTargeting())
+	{
+		if (DSMovement)
+		{
+			DSMovement->bOrientRotationToMovement = false;
+		}
+	}
 }
 
 void ADSCharacterBase::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -421,6 +453,48 @@ void ADSCharacterBase::DisableCharacterInput(uint16 ExcludeFlag)
 void ADSCharacterBase::EnableCharacterInput(uint16 IncludeFlag)
 {
 	SetCharacterInputFlag(ActiveMoveInputFlag | IncludeFlag);
+}
+
+void ADSCharacterBase::OnOwnerLockedOnTarget()
+{
+	if (IsLocallyControlled())
+	{
+		// Notify to authority from autonomous proxy
+		ServerLockOnTarget(true);
+	}
+
+	DisableCharacterInput(RotationInputFlag);
+
+	if (DSMovement)
+	{
+		DSMovement->bOrientRotationToMovement = false;
+	}
+}
+
+void ADSCharacterBase::OnOwnerReleasedTarget()
+{
+	if (IsLocallyControlled())
+	{
+		// Notify to authority from autonomous proxy
+		ServerLockOnTarget(false);
+	}
+
+	EnableCharacterInput(RotationInputFlag);
+
+	if (DSMovement)
+	{
+		DSMovement->bOrientRotationToMovement = true;
+	}
+}
+
+bool ADSCharacterBase::WasCharacterRecentlyRendered(float Tolerance) const
+{
+	if (GetMesh())
+	{
+		return GetMesh()->WasRecentlyRendered(Tolerance);
+	}
+
+	return WasRecentlyRendered(Tolerance);
 }
 
 float ADSCharacterBase::PlayMontage(UAnimMontage * MontageToPlay, float PlayRate, float StartPosition, bool bStopAllMontage, float BlendOutTime)

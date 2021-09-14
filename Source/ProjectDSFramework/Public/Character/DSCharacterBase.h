@@ -89,6 +89,9 @@ public:
 	void SetCharacterInputFlag(uint16 NewFlag);
 	void DisableCharacterInput(uint16 ExcludeFlag);
 	void EnableCharacterInput(uint16 IncludeFlag);
+	void OnOwnerLockedOnTarget();
+	void OnOwnerReleasedTarget();
+	bool WasCharacterRecentlyRendered(float Tolerance = KINDA_SMALL_NUMBER) const;
 
 public:
 	float PlayMontage(class UAnimMontage* MontageToPlay, float PlayRate = 1.f, float StartPosition = 0.f, bool bStopAllMontage = false, float BlendOutTime = 0.f);
@@ -135,10 +138,14 @@ protected:
 	UFUNCTION(Server, Reliable, WithValidation)
 	void ServerDoAttack();
 
+	UFUNCTION(Server, Reliable, WithValidation)
+	void ServerLockOnTarget(bool bLockOn);
+
 public:
 	static FName SpringArmComponentName;
 	static FName CameraComponentName;
 	static FName CharacterStatComponentName;
+	static const uint16 RotationInputFlag;
 
 protected:
 	// {{ Input binding delegates

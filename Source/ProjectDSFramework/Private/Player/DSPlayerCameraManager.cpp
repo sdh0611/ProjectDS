@@ -2,8 +2,8 @@
 
 
 #include "DSPlayerCameraManager.h"
-#include "DSCharacterBase.h"
 #include "DSPlayerControllerBase.h"
+#include "DSGameplayStatics.h"
 
 void ADSPlayerCameraManager::SetTarget(APawn * NewTarget)
 {
@@ -16,6 +16,24 @@ void ADSPlayerCameraManager::SetTarget(APawn * NewTarget)
 void ADSPlayerCameraManager::ReleaseTarget()
 {
 	TargetPawn.Reset();
+}
+
+void ADSPlayerCameraManager::UpdateTargetState(float MaxDistance, const FVector& StartLocation)
+{
+	if (TargetPawn.IsValid())
+	{
+		const float MaxDistanceSquared = MaxDistance * MaxDistance;
+		const float DistanceToTargetSquared = FVector::DistSquared(TargetPawn->GetActorLocation(), StartLocation);
+		// Request release target
+		if (DistanceToTargetSquared > MaxDistanceSquared || !UDSGameplayStatics::WasActorRecentlyRendered(TargetPawn.Get()))
+		{
+			ADSPlayerControllerBase* DSPC = Cast<ADSPlayerControllerBase>(PCOwner);
+			if (IsValid(DSPC))
+			{
+				DSPC->ReleaseTarget();
+			}
+		}
+	}
 }
 
 void ADSPlayerCameraManager::ProcessViewRotation(float DeltaTime, FRotator & OutViewRotation, FRotator & OutDeltaRot)
@@ -36,6 +54,5 @@ void ADSPlayerCameraManager::ProcessViewRotation(float DeltaTime, FRotator & Out
 void ADSPlayerCameraManager::UpdateViewTarget(FTViewTarget & OutVT, float DeltaTime)
 {
 	Super::UpdateViewTarget(OutVT, DeltaTime);
-
 
 }

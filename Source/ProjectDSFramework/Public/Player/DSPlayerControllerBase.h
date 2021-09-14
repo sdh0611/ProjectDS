@@ -30,19 +30,21 @@ public:
 	// ~ Begin APlayerController Interface
 	/** spawn cameras for servers and owning players */
 	virtual void SpawnPlayerCameraManager() override;
+	virtual void TickActor(float DeltaTime, enum ELevelTick TickType, FActorTickFunction& ThisTickFunction) override;
 	// ~ End APlayerController Interface
 
 protected:
 	// ~Begin ADSPlayerControllerBase Interface
-	void LockOnTarget();
-	APawn* GetTargetOnScreen();
+	APawn* GetNearestTargetOnScreen();
 	void SetTarget(APawn* NewTarget);
-	void ReleaseTarget();
+	void UpdateTargetState();
 	// ~End ADSPlayerControllerBase Interface
 
 public:
 	// ~Begin ADSPlayerControllerBase Interface
 	bool IsTargeting() const;
+	void LockOnTarget();
+	void ReleaseTarget();
 	// ~End ADSPlayerControllerBase Interface
 
 protected:
@@ -54,7 +56,13 @@ private:
 	UPROPERTY(Transient)
 	class ADSPlayerCameraManager* DSPlayerCameraManager;
 
-public:
-	static const uint16 RotationInputFlag;
+	UPROPERTY(EditAnywhere, Category = "LockOnTarget", Meta = (ClampMin = "0.0", ClampMax = "1.0"))
+	float TargetSearchBoxHalfWidthRate = 0.1f;
+
+	UPROPERTY(EditAnywhere, Category = "LockOnTarget", Meta = (ClampMin = "0.0", ClampMax = "1.0"))
+	float TargetSearchBoxHalfHeightRate = 0.1f;
+
+	UPROPERTY(EditAnywhere, Category = "LockOnTarget")
+	float CheckTargetMaxDistance = 1500.f;
 
 };

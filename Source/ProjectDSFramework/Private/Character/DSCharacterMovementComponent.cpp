@@ -118,18 +118,20 @@ void UDSCharacterMovementComponent::OnMovementModeChanged(EMovementMode Previous
 {
 	Super::OnMovementModeChanged(PreviousMovementMode, PreviousCustomMode);
 
-	// 공중 회전 제어
-	if (MovementMode == MOVE_Falling)
-	{
-		bOrientRotationToMovement = false;
-	}
+	// DEPRECATED(21. 9.14) : Character class에서 처리하도록 변경 
+	//// 공중 회전 제어
+	//if (MovementMode == MOVE_Falling)
+	//{
+	//	bOrientRotationToMovement = false;
+	//}
 }
 
 void UDSCharacterMovementComponent::ProcessLanded(const FHitResult & Hit, float remainingTime, int32 Iterations)
 {
 	Super::ProcessLanded(Hit, remainingTime, Iterations);
 
-	bOrientRotationToMovement = true;
+	// DEPRECATED(21. 9.14) : Character class에서 처리하도록 변경 
+	//bOrientRotationToMovement = true;
 }
 
 FDSSavedMove_Character::FDSSavedMove_Character()
