@@ -51,7 +51,11 @@ void UDSCharacterAnimInstance::NativeUpdateAnimation(float DeltaSeconds)
 				RunAnimPlayRate = 1.f;
 			}
 
-			UpdateMoveDirection(DeltaSeconds, DSCharacter->GetActorRotation(), DSMovement->Velocity);
+			// Property MoveDirection used when targeting state
+			if (bTargeting)
+			{
+				UpdateMoveDirection(DeltaSeconds, DSCharacter->GetActorRotation(), DSMovement->Velocity);
+			}
 		}
 	}
 }
