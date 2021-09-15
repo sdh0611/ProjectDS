@@ -18,7 +18,7 @@ void ADSPlayerCameraManager::ReleaseTarget()
 	TargetPawn.Reset();
 }
 
-void ADSPlayerCameraManager::UpdateTargetState(float MaxDistance, const FVector& StartLocation)
+void ADSPlayerCameraManager::CheckTargetState(float MaxDistance, const FVector& StartLocation)
 {
 	if (TargetPawn.IsValid())
 	{

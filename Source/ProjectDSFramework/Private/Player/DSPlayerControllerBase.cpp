@@ -67,7 +67,7 @@ void ADSPlayerControllerBase::TickActor(float DeltaTime, ELevelTick TickType, FA
 
 	if (IsTargeting())
 	{
-		UpdateTargetState();
+		CheckTargetState();
 	}
 }
 
@@ -186,11 +186,11 @@ void ADSPlayerControllerBase::SetTarget(APawn * NewTarget)
 	}
 }
 
-void ADSPlayerControllerBase::UpdateTargetState()
+void ADSPlayerControllerBase::CheckTargetState()
 {
 	if (DSPlayerCameraManager && IsValid(GetPawn()))
 	{
-		DSPlayerCameraManager->UpdateTargetState(CheckTargetMaxDistance, GetPawn()->GetActorLocation());
+		DSPlayerCameraManager->CheckTargetState(CheckTargetMaxDistance, GetPawn()->GetActorLocation());
 	}
 }
 

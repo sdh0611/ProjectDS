@@ -1,4 +1,4 @@
-// SDH, All rights reserved. (2021 ~ )
+﻿// SDH, All rights reserved. (2021 ~ )
 
 
 #include "DSGameplayStatics.h"
@@ -12,15 +12,24 @@ bool UDSGameplayStatics::WasActorRecentlyRendered(AActor * CheckActor, float Tol
 
 	if (IsValid(CheckActor))
 	{
+		// Check skeletal mesh was recently rendered.
 		TArray<USkeletalMeshComponent*> SkelMeshes;
 		CheckActor->GetComponents(SkelMeshes, true);
-		for (auto SkelMesh : SkelMeshes)
+		if (SkelMeshes.Num() > 0)
 		{
-			if (SkelMesh->WasRecentlyRendered(RealTolerance))
+			for (auto SkelMesh : SkelMeshes)
 			{
-				bRecentlyRendered = true;
-				break;
+				if (SkelMesh->WasRecentlyRendered(RealTolerance))
+				{
+					bRecentlyRendered = true;
+					break;
+				}
 			}
+		}
+		else
+		{
+			// If the actor dosen't owned skeleltal mesh component, check rendered or not via using actor's function.
+			bRecentlyRendered = CheckActor->WasRecentlyRendered(RealTolerance);
 		}
 	}
 

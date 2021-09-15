@@ -18,7 +18,7 @@ public:
 	// ~ Begin ADSPlayerCameraManager Interface
 	void SetTarget(APawn* NewTarget);
 	void ReleaseTarget();
-	void UpdateTargetState(float MaxDistance, const FVector& StartLocation);
+	void CheckTargetState(float MaxDistance, const FVector& StartLocation);
 	FORCEINLINE bool IsTargeting() { return TargetPawn.IsValid(); }
 	// ~ End ADSPlayerCameraManager Interface
 

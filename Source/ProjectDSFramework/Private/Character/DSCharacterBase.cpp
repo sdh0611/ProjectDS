@@ -41,6 +41,7 @@ ADSCharacterBase::ADSCharacterBase(const FObjectInitializer& ObjectInitializer)
 	CharacterStat = CreateDefaultSubobject<UDSCharacterStatComponent>(CharacterStatComponentName);
 
 	ActiveMoveInputFlag = EActiveInputFlag::InputAll;
+	bTargeting = false;
 }
 
 // Called when the game starts or when spawned
@@ -396,6 +397,7 @@ void ADSCharacterBase::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Out
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
 	DOREPLIFETIME(ADSCharacterBase, CurrentWeapon);
+	DOREPLIFETIME_CONDITION(ADSCharacterBase, bTargeting, COND_SkipOwner);
 }
 
 float ADSCharacterBase::TakeDamage(float DamageAmount, FDamageEvent const & DamageEvent, AController * EventInstigator, AActor * DamageCauser)
@@ -430,6 +432,11 @@ bool ADSCharacterBase::IsWalking() const
 	}
 
 	return false;
+}
+
+bool ADSCharacterBase::IsTargeting() const
+{
+	return bTargeting;
 }
 
 bool ADSCharacterBase::IsMoveInputAllowed(uint16 TestInput) const
@@ -469,6 +476,8 @@ void ADSCharacterBase::OnOwnerLockedOnTarget()
 	{
 		DSMovement->bOrientRotationToMovement = false;
 	}
+
+	bTargeting = true;
 }
 
 void ADSCharacterBase::OnOwnerReleasedTarget()
@@ -485,6 +494,8 @@ void ADSCharacterBase::OnOwnerReleasedTarget()
 	{
 		DSMovement->bOrientRotationToMovement = true;
 	}
+
+	bTargeting = false;
 }
 
 bool ADSCharacterBase::WasCharacterRecentlyRendered(float Tolerance) const

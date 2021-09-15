@@ -84,6 +84,7 @@ public:
 	bool IsArmed() const;
 	bool IsSprinting() const;
 	bool IsWalking() const;
+	bool IsTargeting() const;
 	EActiveInputFlag GetActiveMoveInputFlag() const { return ActiveMoveInputFlag; }
 	bool IsMoveInputAllowed(uint16 TestInput) const;
 	void SetCharacterInputFlag(uint16 NewFlag);
@@ -161,8 +162,11 @@ private:
 	EActiveInputFlag ActiveMoveInputFlag;
 
 protected:
-	UPROPERTY(VisibleAnywhere, Category=Inventory, ReplicatedUsing=OnRep_CurrentWeapon)
+	UPROPERTY(VisibleAnywhere, Category=Inventory, Transient, ReplicatedUsing=OnRep_CurrentWeapon)
 	ADSWeapon* CurrentWeapon;
+
+	UPROPERTY(Transient, Replicated)
+	uint8 bTargeting : 1;
 
 	UPROPERTY()
 	class UDSCharacterAnimInstance* DSAnimInstance;

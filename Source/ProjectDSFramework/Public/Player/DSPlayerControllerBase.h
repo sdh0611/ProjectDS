@@ -37,7 +37,7 @@ protected:
 	// ~Begin ADSPlayerControllerBase Interface
 	APawn* GetNearestTargetOnScreen();
 	void SetTarget(APawn* NewTarget);
-	void UpdateTargetState();
+	void CheckTargetState();
 	// ~End ADSPlayerControllerBase Interface
 
 public:
