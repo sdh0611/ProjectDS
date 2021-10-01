@@ -328,6 +328,7 @@ void FDSAttackHitCheckHelper::HitCheck()
 			for (int32 Index = 0; Index < HitCheckTraceNum; ++Index)
 			{
 				World->LineTraceMultiByChannel(Hits, PrevAttackTraceFootstep[Index], AttackTraceFootstep[Index], ECollisionChannel::ECC_GameTraceChannel1, CollisionQuery);
+				UE_LOG(LogClass, Warning, TEXT("[HitCheckDebugLog] PrevFootStep : %s, CurFootStep : %s"), *PrevAttackTraceFootstep[Index].ToString(), *AttackTraceFootstep[Index].ToString());
 				if (Hits.Num() > 0)
 				{
 					AController* const AttackInstigator = OwnerPrivate->GetInventoryEntityOwner() ? OwnerPrivate->GetInventoryEntityOwner()->GetController() : nullptr;
@@ -344,7 +345,7 @@ void FDSAttackHitCheckHelper::HitCheck()
 					}
 				}
 
-				DrawDebugLine(World, PrevAttackTraceFootstep[Index], AttackTraceFootstep[Index], FColor::Red, true, 5.f);
+				//DrawDebugLine(World, PrevAttackTraceFootstep[Index], AttackTraceFootstep[Index], FColor::Red, true, 5.f);
 			}
 		}
 	}

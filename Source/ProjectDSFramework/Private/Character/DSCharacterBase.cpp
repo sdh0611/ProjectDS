@@ -373,6 +373,7 @@ void ADSCharacterBase::ServerLockOnTarget_Implementation(bool bLockOn)
 	{
 		OnOwnerReleasedTarget();
 	}
+
 }
 
 void ADSCharacterBase::Landed(const FHitResult & Hit)
@@ -464,7 +465,8 @@ void ADSCharacterBase::EnableCharacterInput(uint16 IncludeFlag)
 
 void ADSCharacterBase::OnOwnerLockedOnTarget()
 {
-	if (IsLocallyControlled())
+	// Prevent recursive function call 
+	if (IsLocallyControlled() && !HasAuthority())
 	{
 		// Notify to authority from autonomous proxy
 		ServerLockOnTarget(true);
@@ -482,7 +484,8 @@ void ADSCharacterBase::OnOwnerLockedOnTarget()
 
 void ADSCharacterBase::OnOwnerReleasedTarget()
 {
-	if (IsLocallyControlled())
+	// Prevent recursive function call 
+	if (IsLocallyControlled() && !HasAuthority())
 	{
 		// Notify to authority from autonomous proxy
 		ServerLockOnTarget(false);
