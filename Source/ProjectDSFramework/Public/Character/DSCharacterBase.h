@@ -93,6 +93,7 @@ public:
 	void OnOwnerLockedOnTarget();
 	void OnOwnerReleasedTarget();
 	bool WasCharacterRecentlyRendered(float Tolerance = KINDA_SMALL_NUMBER) const;
+	void RotateToDesired();
 
 public:
 	float PlayMontage(class UAnimMontage* MontageToPlay, float PlayRate = 1.f, float StartPosition = 0.f, bool bStopAllMontage = false, float BlendOutTime = 0.f);

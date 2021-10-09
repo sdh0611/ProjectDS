@@ -5,7 +5,6 @@
 #include "DSCharacterBase.h"
 #include "DrawDebugHelpers.h"
 #include "Net/UnrealNetwork.h"
-#include "..\..\..\Public\Character\Inventory\DSWeaponSwordBase.h"
 
 
 ADSWeaponSwordBase::ADSWeaponSwordBase()
@@ -152,6 +151,7 @@ bool ADSWeaponSwordBase::DoAttack()
 			{
 				OwnerCharacter->PlayAnimMontage(Sequence->AttackAnim.WeaponAnim, Sequence->AttackAnim.PlayRate);
 			}
+			OwnerCharacter->RotateToDesired();
 		}
 
 		return bCanAttack;
@@ -301,7 +301,7 @@ void FDSAttackHitCheckHelper::UpdateAttackTraceFootstep()
 			const float Length = DirNormalized.Size() / (HitCheckTraceNum - 1);
 			if (DirNormalized.Normalize())
 			{
-				DirNormalized *= Length;
+				DirNormalized *= Length;  
 				for (int32 Index = 1; Index < FootstepCount - 1; ++Index)
 				{
 					AttackTraceFootstep[Index] = AttackTraceFootstep[Index - 1] + DirNormalized;
@@ -345,7 +345,7 @@ void FDSAttackHitCheckHelper::HitCheck()
 					}
 				}
 
-				//DrawDebugLine(World, PrevAttackTraceFootstep[Index], AttackTraceFootstep[Index], FColor::Red, true, 5.f);
+				DrawDebugLine(World, PrevAttackTraceFootstep[Index], AttackTraceFootstep[Index], FColor::Red, true, 5.f);
 			}
 		}
 	}

@@ -511,6 +511,16 @@ bool ADSCharacterBase::WasCharacterRecentlyRendered(float Tolerance) const
 	return WasRecentlyRendered(Tolerance);
 }
 
+void ADSCharacterBase::RotateToDesired()
+{
+	APlayerController* PC = GetController<APlayerController>();
+	if (IsValid(PC))
+	{
+		const FRotator DesiredRot(0.f, PC->GetDesiredRotation().Yaw, 0.f);
+		SetActorRotation(DesiredRot);
+	}
+}
+
 float ADSCharacterBase::PlayMontage(UAnimMontage * MontageToPlay, float PlayRate, float StartPosition, bool bStopAllMontage, float BlendOutTime)
 {
 	float PlayMontageLength = 0.f;
