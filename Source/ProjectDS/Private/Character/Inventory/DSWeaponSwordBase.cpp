@@ -5,6 +5,7 @@
 #include "DSCharacterBase.h"
 #include "DrawDebugHelpers.h"
 #include "Net/UnrealNetwork.h"
+#include "..\..\..\Public\Character\Inventory\DSWeaponSwordBase.h"
 
 
 ADSWeaponSwordBase::ADSWeaponSwordBase()
@@ -24,7 +25,7 @@ void ADSWeaponSwordBase::InternalUpdateWeapon(float DeltaTime)
 
 	UpdateAttackSequence(DeltaTime);
 
-	if (!IsNetMode(NM_Client))
+	if (HasAuthority())
 	{
 		AttackHitCheckHelper.Update(DeltaTime);
 	}
@@ -42,7 +43,7 @@ void ADSWeaponSwordBase::UpdateAttackSequence(float DeltaTime)
 			CurrentCombo = INDEX_NONE;
 			if (OwnerCharacter.IsValid())
 			{
-				OwnerCharacter->EnableCharacterInput(ADSCharacterBase::EActiveInputFlag::InputAll);
+				OwnerCharacter->OnAttackEnd();
 			}
 
 			PendingAttack.Empty();
@@ -96,7 +97,7 @@ bool ADSWeaponSwordBase::CanAttack() const
 //				CurrentCombo = NextCombo;
 //
 //				Sequence->Attack();
-//				DisableCharacterMovement();
+//				DisableCharacterMovementInput();
 //				//OwnerCharacter->SetCharacterInputFlag(ADSCharacterBase::EActiveInputFlag::InputAll);
 //				//OwnerCharacter->DisableCharacterInput(ADSCharacterBase::EActiveInputFlag::InputJump | ADSCharacterBase::EActiveInputFlag::InputEquipWeapon);
 //				//GetWorldTimerManager().SetTimer(MoveInputTimer, this, &ADSWeaponSwordBase::DisableCharacterMovement, Sequence->GetMoveAllowTimeInterval(), false);
@@ -144,14 +145,22 @@ bool ADSWeaponSwordBase::DoAttack()
 		{
 			CurrentCombo = NextCombo;
 			
+			// Check hit check in process
+			if (AttackHitCheckHelper.IsInHitCheckProcess())
+			{
+				AttackHitCheckHelper.Reset();
+			}
+
+			// Update attack sequence
 			Sequence = NextSequence;
 			Sequence->Attack();
-			DisableCharacterMovement();
 			if (Sequence->AttackAnim.WeaponAnim)
 			{
 				OwnerCharacter->PlayAnimMontage(Sequence->AttackAnim.WeaponAnim, Sequence->AttackAnim.PlayRate);
 			}
-			OwnerCharacter->RotateToDesired();
+
+			// Character
+			OwnerCharacter->OnAttackStart();
 		}
 
 		return bCanAttack;
@@ -198,13 +207,21 @@ void ADSWeaponSwordBase::PostNetReceive()
 
 }
 
-void ADSWeaponSwordBase::DisableCharacterMovement()
+void ADSWeaponSwordBase::RequestHitCheckStart()
 {
-	if (OwnerCharacter.IsValid())
+	if (HasAuthority())
 	{
-		// Attack, LookUp, Turn 빼고 모든 입력을 막음.
-		uint16 EnableInput = ADSCharacterBase::EActiveInputFlag::InputAttack | ADSCharacterBase::EActiveInputFlag::InputLookUp | ADSCharacterBase::EActiveInputFlag::InputTurn;
-		OwnerCharacter->SetCharacterInputFlag(EnableInput);
+		UE_LOG(LogClass, Warning, TEXT("[WeaponDebugLog] Request hit check start."));
+		AttackHitCheckHelper.HitCheckStart();
+	}
+}
+
+void ADSWeaponSwordBase::RequestHitCheckEnd()
+{
+	if (HasAuthority())
+	{
+		UE_LOG(LogClass, Warning, TEXT("[WeaponDebugLog] Request hit check end."));
+		AttackHitCheckHelper.HitCheckEnd();
 	}
 }
 
@@ -233,7 +250,9 @@ void FDSAttackHitCheckHelper::Reset()
 	bActive = false;
 
 	CollisionQuery.ClearIgnoredActors();
-		
+	
+	UE_LOG(LogClass, Warning, TEXT("[HitCheckDebugLog] Reset Helper."));
+
 	if (AttackTraceFootstep.Num() == HitCheckTraceNum)
 	{
 		for (int32 Index = 0; Index < HitCheckTraceNum; ++Index)
@@ -317,6 +336,7 @@ void FDSAttackHitCheckHelper::HitCheck()
 	if(OwnerPrivate.IsValid())
 	{
 		UWorld* World = OwnerPrivate->GetWorld();
+		bool bHit = false;
 		if (World)
 		{
 			// Cache last trace location
@@ -328,7 +348,7 @@ void FDSAttackHitCheckHelper::HitCheck()
 			for (int32 Index = 0; Index < HitCheckTraceNum; ++Index)
 			{
 				World->LineTraceMultiByChannel(Hits, PrevAttackTraceFootstep[Index], AttackTraceFootstep[Index], ECollisionChannel::ECC_GameTraceChannel1, CollisionQuery);
-				UE_LOG(LogClass, Warning, TEXT("[HitCheckDebugLog] PrevFootStep : %s, CurFootStep : %s"), *PrevAttackTraceFootstep[Index].ToString(), *AttackTraceFootstep[Index].ToString());
+				//UE_LOG(LogClass, Warning, TEXT("[HitCheckDebugLog] PrevFootStep : %s, CurFootStep : %s"), *PrevAttackTraceFootstep[Index].ToString(), *AttackTraceFootstep[Index].ToString());
 				if (Hits.Num() > 0)
 				{
 					AController* const AttackInstigator = OwnerPrivate->GetInventoryEntityOwner() ? OwnerPrivate->GetInventoryEntityOwner()->GetController() : nullptr;
@@ -337,15 +357,27 @@ void FDSAttackHitCheckHelper::HitCheck()
 						if (Hit.Actor.IsValid())
 						{
 							//UE_LOG(LogClass, Warning, TEXT("[HitCheckDebugLog|%f] Hit actor : %s, Hit component : %s !!!"), World->GetTimeSeconds(), *(Hit.Actor->GetName()), *(Hit.Component.IsValid() ? Hit.Component->GetName() : FString()));
-							Hit.Actor->TakeDamage(0.f, FPointDamageEvent(), AttackInstigator, OwnerPrivate.Get());
-
+							Hit.Actor->TakeDamage(30.f, FPointDamageEvent(), AttackInstigator, OwnerPrivate.Get());
 							// Add hit actor to ignored
 							CollisionQuery.AddIgnoredActor(Hit.Actor.Get());
+							if (!bHit)
+							{
+								bHit = true;
+							}
 						}
 					}
 				}
 
-				DrawDebugLine(World, PrevAttackTraceFootstep[Index], AttackTraceFootstep[Index], FColor::Red, true, 5.f);
+				//DrawDebugLine(World, PrevAttackTraceFootstep[Index], AttackTraceFootstep[Index], FColor::Red, true, 5.f);
+			}
+		}
+
+		if (bHit)
+		{
+			// Test code
+			if (OwnerPrivate->GetInventoryEntityOwner())
+			{
+				OwnerPrivate->GetInventoryEntityOwner()->OnAttackHit();
 			}
 		}
 	}

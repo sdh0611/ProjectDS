@@ -13,6 +13,7 @@
 #include "Net/UnrealNetwork.h"
 #include "DSCharacterStatComponent.h"
 #include "DrawDebugHelpers.h"
+#include "DSSkeletalMeshComponent.h"
 
 FName ADSCharacterBase::SpringArmComponentName = TEXT("SpringArm");
 FName ADSCharacterBase::CameraComponentName = TEXT("Camera");
@@ -21,7 +22,7 @@ const uint16 ADSCharacterBase::RotationInputFlag = ADSCharacterBase::EActiveInpu
 
 // Sets default values
 ADSCharacterBase::ADSCharacterBase(const FObjectInitializer& ObjectInitializer)
-	:Super(ObjectInitializer.SetDefaultSubobjectClass<UDSCharacterMovementComponent>(CharacterMovementComponentName))
+	: Super(ObjectInitializer.SetDefaultSubobjectClass<UDSCharacterMovementComponent>(CharacterMovementComponentName))
 {
  	// Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
@@ -228,7 +229,7 @@ void ADSCharacterBase::EndJump()
 
 void ADSCharacterBase::Sprint(bool bSprint)
 {
-	if (IsMoveInputAllowed(EActiveInputFlag::InputSprint) || bSprint)
+	if (IsMoveInputAllowed(EActiveInputFlag::InputSprint) || !bSprint)
 	{
 		SetSprinting(bSprint);
 		if (IsNetMode(NM_Client))
@@ -353,9 +354,63 @@ void ADSCharacterBase::UnarmWeapon()
 	}
 }
 
+void ADSCharacterBase::OnAttackStart()
+{
+	// Attack, Move 제외한 모든 입력을 막음.
+	uint16 NewInput = ADSCharacterBase::EActiveInputFlag::InputAttack | ADSCharacterBase::EActiveInputFlag::InputMoveForward | ADSCharacterBase::EActiveInputFlag::InputMoveRight;
+	if (!IsTargeting())
+	{
+		NewInput |= RotationInputFlag;
+	}
+
+	SetCharacterInputFlag(NewInput);
+
+	// Sprint 취소
+	if (IsSprinting())
+	{
+		Sprint(false);
+	}
+
+	//RotateToDesired();
+}
+
+void ADSCharacterBase::OnAttackEnd()
+{
+	SetCharacterInputFlag(ADSCharacterBase::EActiveInputFlag::InputAll);
+
+	// Targeting중이면 LookUp, Turn 입력 막음.
+	if (IsTargeting())
+	{
+		const uint16 DisableInput = RotationInputFlag;
+		DisableCharacterInput(DisableInput);
+	}
+}
+
+void ADSCharacterBase::ProcessHit(const FTakeHitInfo & PlayHitInfo)
+{
+	// Test code
+	if (HitReactAnims.Num() > 0)
+	{
+		PlayAnimMontage(HitReactAnims[0].HitReactAnim);
+
+		// For hit stop test
+		OnAttackHit();
+	}
+}
+
+void ADSCharacterBase::Die()
+{
+}
+
 void ADSCharacterBase::OnRep_CurrentWeapon()
 {
 	ArmWeapon();
+}
+
+void ADSCharacterBase::OnRep_HitInfo()
+{
+	UE_LOG(LogClass, Warning, TEXT("[HitDebugLog] HitInfo repliocated, damage : %f"), HitInfo.GetDamage());
+	ProcessHit(HitInfo);
 }
 
 bool ADSCharacterBase::ServerLockOnTarget_Validate(bool bLockOn)
@@ -398,6 +453,8 @@ void ADSCharacterBase::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Out
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
 	DOREPLIFETIME(ADSCharacterBase, CurrentWeapon);
+	DOREPLIFETIME(ADSCharacterBase, HitInfo);
+
 	DOREPLIFETIME_CONDITION(ADSCharacterBase, bTargeting, COND_SkipOwner);
 }
 
@@ -406,6 +463,14 @@ float ADSCharacterBase::TakeDamage(float DamageAmount, FDamageEvent const & Dama
 	float FinalDamage = Super::TakeDamage(DamageAmount, DamageEvent, EventInstigator, DamageCauser);
 
 	UE_LOG(LogClass, Warning, TEXT("[TakeDamageLog] Take damage !!!"));
+
+	// Replication test code
+	HitInfo.SetDamage(FinalDamage);
+
+	if (IsNetMode(NM_Standalone))
+	{
+		OnRep_HitInfo();
+	}
 
 	return FinalDamage;
 }
@@ -518,6 +583,31 @@ void ADSCharacterBase::RotateToDesired()
 	{
 		const FRotator DesiredRot(0.f, PC->GetDesiredRotation().Yaw, 0.f);
 		SetActorRotation(DesiredRot);
+	}
+}
+
+void ADSCharacterBase::OnAttackHit()
+{
+	// Test code
+	//if(GetMesh())
+	if (DSAnimInstance)
+	{
+		//GetMesh()->SetComponentTickEnabled(false);
+		//GetMesh()->SetComponentTickInterval(0.1f);
+		DSAnimInstance->Montage_Pause(NULL);
+
+		TWeakObjectPtr<ADSCharacterBase> WeakThis(this);
+		auto HitStopTest = [WeakThis](){
+			ADSCharacterBase* Self = WeakThis.Get();
+			if (IsValid(Self) && Self->DSAnimInstance)
+			{
+				//Self->GetMesh()->SetComponentTickEnabled(true);
+				//Self->GetMesh()->SetComponentTickInterval(0.f);
+				Self->DSAnimInstance->Montage_Resume(nullptr);
+			}
+		};
+
+		GetWorldTimerManager().SetTimer(HitStopTimer, HitStopTest, 0.1f, false);
 	}
 }
 

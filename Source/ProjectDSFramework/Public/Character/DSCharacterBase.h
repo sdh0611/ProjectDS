@@ -4,13 +4,31 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
+#include "DSBaseTypes.h"
 #include "DSCharacterBase.generated.h"
 
 class UDSCharacterMovementComponent;
 class ADSWeapon;
 class ADSEquipment;
 
-UCLASS()
+
+USTRUCT(BlueprintType)
+struct FDSCharacterHitReaction
+{
+	GENERATED_USTRUCT_BODY()
+
+	UPROPERTY(EditAnywhere)
+	class UAnimMontage* HitReactAnim;
+
+	FDSCharacterHitReaction()
+		: HitReactAnim(nullptr)
+	{
+	}
+
+};
+
+
+UCLASS(Abstract)
 class PROJECTDSFRAMEWORK_API ADSCharacterBase : public ACharacter
 {
 	GENERATED_BODY()
@@ -94,14 +112,18 @@ public:
 	void OnOwnerReleasedTarget();
 	bool WasCharacterRecentlyRendered(float Tolerance = KINDA_SMALL_NUMBER) const;
 	void RotateToDesired();
+	void OnAttackHit();
 
 public:
+	// Deprecated
+	UE_DEPRECATED(21.10.11, "Use APawn::PlayAnimMontage instead.")
 	float PlayMontage(class UAnimMontage* MontageToPlay, float PlayRate = 1.f, float StartPosition = 0.f, bool bStopAllMontage = false, float BlendOutTime = 0.f);
 
 protected:
 	void SetSprinting(bool bSprint);
 	void SetWalking(bool bWalk);
 
+// ~ Begin player input binds
 protected:
 	void MoveForward(float Value);
 	void MoveRight(float Value);
@@ -116,16 +138,26 @@ protected:
 	void ToggleWeapon();
 	void Attack();
 	void Guard(bool bGuard);
+// ~ End player input binds
 
 public:
 	virtual void EquipWeapon(ADSWeapon* Equipped);
 	virtual void UnequipWeapon();
 	void ArmWeapon();
 	void UnarmWeapon();
+	void OnAttackStart();
+	void OnAttackEnd();
+
+protected:
+	void ProcessHit(const FTakeHitInfo& PlayHitInfo);
+	void Die();
 
 protected:
 	UFUNCTION()
 	virtual void OnRep_CurrentWeapon();
+
+	UFUNCTION()
+	virtual void OnRep_HitInfo();
 
 protected:
 	UFUNCTION(Server, Reliable, WithValidation)
@@ -162,6 +194,9 @@ public:
 private:
 	EActiveInputFlag ActiveMoveInputFlag;
 
+	FTimerHandle HitStopTimer;
+
+// ~ Begin replicated properties
 protected:
 	UPROPERTY(VisibleAnywhere, Category=Inventory, Transient, ReplicatedUsing=OnRep_CurrentWeapon)
 	ADSWeapon* CurrentWeapon;
@@ -169,10 +204,16 @@ protected:
 	UPROPERTY(Transient, Replicated)
 	uint8 bTargeting : 1;
 
+	// For replicate damage info
+	UPROPERTY(Transient, ReplicatedUsing=OnRep_HitInfo)
+	FTakeHitInfo HitInfo;
+
+// ~ End replicated properties
+
+protected:
 	UPROPERTY()
 	class UDSCharacterAnimInstance* DSAnimInstance;
 
-protected:
 	UPROPERTY(VisibleAnywhere)
 	class USpringArmComponent* SpringArm;
 
@@ -184,5 +225,9 @@ protected:
 
 	UPROPERTY(Transient)
 	class UDSCharacterMovementComponent* DSMovement;
+
+protected:
+	UPROPERTY(EditDefaultsOnly, Category = "Hit React")
+	TArray<FDSCharacterHitReaction> HitReactAnims;
 
 };

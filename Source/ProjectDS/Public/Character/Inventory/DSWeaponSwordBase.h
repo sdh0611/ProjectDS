@@ -44,10 +44,6 @@ private:
 	UPROPERTY(EditAnywhere)
 	float ComboCheckEnd = 0.f;
 
-	// 공격 시작 후 Hit check 타이밍
-	UPROPERTY(EditAnywhere)
-	float HitCheckTime;
-
 	// 공격 시작 후 움직임을 허용하는 시간
 	UPROPERTY(EditAnywhere)
 	float MoveAllowTimeInterval;
@@ -61,7 +57,6 @@ public:
 		, AttackSequenceDuration(1.f)
 		, ComboCheckStart(0.f)
 		, ComboCheckEnd(0.f)
-		, HitCheckTime(0.f)
 		, MoveAllowTimeInterval(0.f)
 		, ElapsedTime(0.f)
 		, bAttacking(false)
@@ -175,13 +170,16 @@ public:
 	virtual void PostNetReceive() override;
 	// ~ End AActor Interface
 
+public:
+	void RequestHitCheckStart();
+	void RequestHitCheckEnd();
+
 protected:
 	virtual bool DoAttack() override;
 	virtual void InternalUnequipped() override;
 
 private:
 	FDSWeaponAttackSequence* GetAttackSequence(int32 Index);
-	void DisableCharacterMovement();
 
 public:
 	FTimerHandle MoveInputTimer;
