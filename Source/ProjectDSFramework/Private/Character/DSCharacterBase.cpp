@@ -588,7 +588,6 @@ void ADSCharacterBase::RotateToDesired()
 void ADSCharacterBase::OnAttackHit()
 {
 	// Test code
-	//if(GetMesh())
 	if (DSAnimInstance)
 	{
 		//GetMesh()->SetComponentTickEnabled(false);

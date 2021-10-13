@@ -5,11 +5,13 @@
 #include "DSCharacterBase.h"
 #include "DrawDebugHelpers.h"
 #include "Net/UnrealNetwork.h"
+#include "DSCharacterAnimInstance.h"
 #include "..\..\..\Public\Character\Inventory\DSWeaponSwordBase.h"
 
 
 ADSWeaponSwordBase::ADSWeaponSwordBase()
 {
+	bEnableComboInput = false;
 }
 
 void ADSWeaponSwordBase::BeginPlay()
@@ -23,7 +25,7 @@ void ADSWeaponSwordBase::InternalUpdateWeapon(float DeltaTime)
 {
 	Super::InternalUpdateWeapon(DeltaTime);
 
-	UpdateAttackSequence(DeltaTime);
+	//UpdateAttackSequence(DeltaTime);
 
 	if (HasAuthority())
 	{
@@ -33,26 +35,22 @@ void ADSWeaponSwordBase::InternalUpdateWeapon(float DeltaTime)
 
 void ADSWeaponSwordBase::UpdateAttackSequence(float DeltaTime)
 {
-	FDSWeaponAttackSequence* CurSequence = GetAttackSequence(CurrentCombo);
-	if (CurSequence && CurSequence->IsAttacking())
-	{
-		if (CurSequence->IsSequenceEnd())
-		{
-			CurSequence->Reset();
-			//CurrentCombo = 0;
-			CurrentCombo = INDEX_NONE;
-			if (OwnerCharacter.IsValid())
-			{
-				OwnerCharacter->OnAttackEnd();
-			}
+	//FDSWeaponAttackSequence* CurSequence = GetAttackSequence(CurrentCombo);
+	//if (CurSequence && CurSequence->IsAttacking())
+	//{
+	//	if (CurSequence->IsSequenceEnd())
+	//	{
+	//		CurSequence->Reset();
+	//		//CurrentCombo = 0;
+	//		CurrentCombo = INDEX_NONE;
+	//		if (OwnerCharacter.IsValid())
+	//		{
+	//			OwnerCharacter->OnAttackEnd();
+	//		}
 
-			PendingAttack.Empty();
-		}
-		else
-		{
-			CurSequence->Update(DeltaTime);
-		}
-	}
+	//		PendingAttack.Empty();
+	//	}
+	//}
 }
 
 bool ADSWeaponSwordBase::CanAttack() const
@@ -156,7 +154,9 @@ bool ADSWeaponSwordBase::DoAttack()
 			Sequence->Attack();
 			if (Sequence->AttackAnim.WeaponAnim)
 			{
+				// TODO : 
 				OwnerCharacter->PlayAnimMontage(Sequence->AttackAnim.WeaponAnim, Sequence->AttackAnim.PlayRate);
+				
 			}
 
 			// Character
@@ -167,6 +167,10 @@ bool ADSWeaponSwordBase::DoAttack()
 	}
 
 	return false;
+}
+
+void ADSWeaponSwordBase::InternalEquipped()
+{
 }
 
 const FDSWeaponAttackSequence* ADSWeaponSwordBase::GetAttackSequence(int32 Index) const
@@ -225,11 +229,52 @@ void ADSWeaponSwordBase::RequestHitCheckEnd()
 	}
 }
 
+void ADSWeaponSwordBase::RequestComboCheckStart()
+{
+	FDSWeaponAttackSequence* CurAttackSequence = GetAttackSequence(CurrentCombo);
+	if (CurAttackSequence)
+	{
+		CurAttackSequence->SetEnableCombo(true);
+	}
+	
+}
+
+void ADSWeaponSwordBase::RequestComboCheckEnd()
+{
+	FDSWeaponAttackSequence* CurAttackSequence = GetAttackSequence(CurrentCombo);
+	if (CurAttackSequence)
+	{
+		CurAttackSequence->SetEnableCombo(false);
+	}
+}
+
+void ADSWeaponSwordBase::OnAttackMontageEnd(class UAnimMontage* AttackAnimMontage, bool bInterrupted)
+{
+	FDSWeaponAttackSequence* CurSequence = GetAttackSequence(CurrentCombo);
+	if (CurSequence)
+	{
+		CurSequence->Reset();
+		//CurrentCombo = 0;
+		CurrentCombo = INDEX_NONE;
+		if (OwnerCharacter.IsValid())
+		{
+			OwnerCharacter->OnAttackEnd();
+		}
+
+		PendingAttack.Empty();
+	}
+}
+
 void ADSWeaponSwordBase::InternalUnequipped()
 {
 	Super::InternalUnequipped();
+	
 
 	AttackHitCheckHelper.Reset();
+}
+
+void ADSWeaponSwordBase::SubscribeWeaponAnimDelegate(bool bSubscribe)
+{
 }
 
 void FDSAttackHitCheckHelper::Initialize(ADSWeaponSwordBase * OwnerSwordWeapon)

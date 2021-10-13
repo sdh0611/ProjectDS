@@ -38,56 +38,44 @@ private:
 	UPROPERTY(EditAnywhere)
 	float AttackSequenceDuration = 1.f;
 
-	UPROPERTY(EditAnywhere)
-	float ComboCheckStart = 0.f;
-
-	UPROPERTY(EditAnywhere)
-	float ComboCheckEnd = 0.f;
-
 	// 공격 시작 후 움직임을 허용하는 시간
 	UPROPERTY(EditAnywhere)
 	float MoveAllowTimeInterval;
 
-	float ElapsedTime = 0.f;
 	uint8 bAttacking : 1;
+	uint8 bEnableCombo : 1;
 
 public:
 	FDSWeaponAttackSequence()
 		: AttackAnim()
 		, AttackSequenceDuration(1.f)
-		, ComboCheckStart(0.f)
-		, ComboCheckEnd(0.f)
 		, MoveAllowTimeInterval(0.f)
-		, ElapsedTime(0.f)
 		, bAttacking(false)
+		, bEnableCombo(false)
 	{
 	}
 
 	bool IsAttacking() const { return bAttacking; }
-	bool IsSequenceEnd() const { return ElapsedTime > AttackSequenceDuration; }
 	float GetMoveAllowTimeInterval() const { return MoveAllowTimeInterval; }
 	void Attack()
 	{
 		bAttacking = true;
 	}
 
-	void Update(float DeltaTime)
+	void SetEnableCombo(bool bEnable)
 	{
-		if (IsAttacking())
-		{
-			ElapsedTime += DeltaTime;
-		}
+		bEnableCombo = bEnable;
 	}
 
 	bool CanCombo() const
 	{
-		return ElapsedTime >= ComboCheckStart && ElapsedTime <= ComboCheckEnd;
+		return bEnableCombo;
 	}
 
 	void Reset()
 	{
-		ElapsedTime = 0.f;
 		bAttacking = false;
+		bEnableCombo = false;
 	}
 
 };
@@ -173,10 +161,15 @@ public:
 public:
 	void RequestHitCheckStart();
 	void RequestHitCheckEnd();
+	void RequestComboCheckStart();
+	void RequestComboCheckEnd();
+	void OnAttackMontageEnd(class UAnimMontage* AttackAnimMontage, bool bInterrupted);
 
 protected:
 	virtual bool DoAttack() override;
+	virtual void InternalEquipped() override;
 	virtual void InternalUnequipped() override;
+	void SubscribeWeaponAnimDelegate(bool bSubscribe);
 
 private:
 	FDSWeaponAttackSequence* GetAttackSequence(int32 Index);
@@ -194,5 +187,6 @@ protected:
 	UPROPERTY(EditDefaultsOnly)
 	TArray<FDSWeaponAttackSequence> AttackSequence;
 
+	uint8 bEnableComboInput : 1;
 
 };

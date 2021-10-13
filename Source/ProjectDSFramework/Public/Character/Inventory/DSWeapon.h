@@ -104,6 +104,7 @@ public:
 	void SetWeaponArmed(bool bIsArmed);
 	bool IsWeaponArmed() const { return bWeaponArmed; }
 
+
 protected:
 	UFUNCTION()
 	virtual void OnRep_WeaponArmed();
