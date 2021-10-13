@@ -1,4 +1,4 @@
-// SDH, All rights reserved. (2021 ~ )
+ï»¿// SDH, All rights reserved. (2021 ~ )
 
 
 #include "DSCharacterBase.h"
@@ -13,7 +13,6 @@
 #include "Net/UnrealNetwork.h"
 #include "DSCharacterStatComponent.h"
 #include "DrawDebugHelpers.h"
-#include "DSSkeletalMeshComponent.h"
 
 FName ADSCharacterBase::SpringArmComponentName = TEXT("SpringArm");
 FName ADSCharacterBase::CameraComponentName = TEXT("Camera");
@@ -356,7 +355,7 @@ void ADSCharacterBase::UnarmWeapon()
 
 void ADSCharacterBase::OnAttackStart()
 {
-	// Attack, Move Á¦¿ÜÇÑ ¸ğµç ÀÔ·ÂÀ» ¸·À½.
+	// Attack, Move ì œì™¸í•œ ëª¨ë“  ì…ë ¥ì„ ë§‰ìŒ.
 	uint16 NewInput = ADSCharacterBase::EActiveInputFlag::InputAttack | ADSCharacterBase::EActiveInputFlag::InputMoveForward | ADSCharacterBase::EActiveInputFlag::InputMoveRight;
 	if (!IsTargeting())
 	{
@@ -365,7 +364,7 @@ void ADSCharacterBase::OnAttackStart()
 
 	SetCharacterInputFlag(NewInput);
 
-	// Sprint Ãë¼Ò
+	// Sprint ì·¨ì†Œ
 	if (IsSprinting())
 	{
 		Sprint(false);
@@ -378,7 +377,7 @@ void ADSCharacterBase::OnAttackEnd()
 {
 	SetCharacterInputFlag(ADSCharacterBase::EActiveInputFlag::InputAll);
 
-	// TargetingÁßÀÌ¸é LookUp, Turn ÀÔ·Â ¸·À½.
+	// Targetingì¤‘ì´ë©´ LookUp, Turn ì…ë ¥ ë§‰ìŒ.
 	if (IsTargeting())
 	{
 		const uint16 DisableInput = RotationInputFlag;
@@ -608,6 +607,12 @@ void ADSCharacterBase::OnAttackHit()
 		};
 
 		GetWorldTimerManager().SetTimer(HitStopTimer, HitStopTest, 0.1f, false);
+	}
+
+	ADSPlayerControllerBase* DSPC = GetController<ADSPlayerControllerBase>();
+	if (DSPC)
+	{
+		DSPC->OnAttackHit();
 	}
 }
 

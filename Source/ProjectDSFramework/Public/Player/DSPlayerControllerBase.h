@@ -45,6 +45,7 @@ public:
 	bool IsTargeting() const;
 	void LockOnTarget();
 	void ReleaseTarget();
+	void OnAttackHit();
 	// ~End ADSPlayerControllerBase Interface
 
 protected:
@@ -64,5 +65,9 @@ private:
 
 	UPROPERTY(EditAnywhere, Category = "LockOnTarget")
 	float CheckTargetMaxDistance = 1500.f;
+
+private:
+	UPROPERTY(EditAnywhere, Category = "CameraShake", Meta = (AllowPrivateAccess = "true"))
+	TSubclassOf<UCameraShakeBase> AttackHitCameraShakeClass;
 
 };

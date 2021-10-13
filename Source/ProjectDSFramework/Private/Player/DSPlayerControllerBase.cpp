@@ -147,14 +147,6 @@ APawn * ADSPlayerControllerBase::GetNearestTargetOnScreen()
 
 					if (bCompleteMakeBoundBox)
 					{
-						// {{ Debug
-						//if (GetHUD())
-						//{
-						//	GetHUD()->DrawRect(FLinearColor(FColor(255, 0, 0)), PawnBoundBox.GetCenter().X, PawnBoundBox.GetCenter().Y, PawnBoundBox.GetSize().X, PawnBoundBox.GetSize().Y);
-						//	GetHUD()->DrawRect(FLinearColor(FColor(0, 255, 0)), SearchBox.GetCenter().X, SearchBox.GetCenter().Y, SearchBox.GetSize().X, SearchBox.GetSize().Y);
-						//}
-						// }} Debug
-
 						if (SearchBox.Intersect(PawnBoundBox))
 						{
 							if (ShortestDistanceSquared < 0.f || ShortestDistanceSquared > DistSquared)
@@ -229,3 +221,13 @@ void ADSPlayerControllerBase::ReleaseTarget()
 		}
 	}
 }
+
+// For camera shake test.
+void ADSPlayerControllerBase::OnAttackHit()
+{
+	if (DSPlayerCameraManager)
+	{
+		DSPlayerCameraManager->StartCameraShake(AttackHitCameraShakeClass);
+	}
+}
+
