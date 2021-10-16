@@ -394,6 +394,10 @@ void ADSCharacterBase::ProcessHit(const FTakeHitInfo & PlayHitInfo)
 	}
 }
 
+void ADSCharacterBase::SimulateTakeDamage()
+{
+}
+
 void ADSCharacterBase::Die()
 {
 }
@@ -462,16 +466,25 @@ void ADSCharacterBase::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Out
 
 float ADSCharacterBase::TakeDamage(float DamageAmount, FDamageEvent const & DamageEvent, AController * EventInstigator, AActor * DamageCauser)
 {
-	float FinalDamage = Super::TakeDamage(DamageAmount, DamageEvent, EventInstigator, DamageCauser);
+	float FinalDamage = 0.f;
 
-	UE_LOG(LogClass, Warning, TEXT("[TakeDamageLog] Take damage !!!"));
-
-	// Replication test code
-	HitInfo.SetDamage(FinalDamage);
-
-	if (IsNetMode(NM_Standalone))
+	if (!HasAuthority())
 	{
-		OnRep_HitInfo();
+		SimulateTakeDamage();
+	}
+	else
+	{
+		FinalDamage = Super::TakeDamage(DamageAmount, DamageEvent, EventInstigator, DamageCauser);
+
+		UE_LOG(LogClass, Warning, TEXT("[TakeDamageLog] Take damage !!!"));
+
+		// Replication test code
+		HitInfo.SetDamage(FinalDamage);
+
+		if (IsNetMode(NM_Standalone))
+		{
+			OnRep_HitInfo();
+		}
 	}
 
 	return FinalDamage;

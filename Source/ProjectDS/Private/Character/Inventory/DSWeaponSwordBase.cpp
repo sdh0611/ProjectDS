@@ -28,7 +28,7 @@ void ADSWeaponSwordBase::InternalUpdateWeapon(float DeltaTime)
 
 	//UpdateAttackSequence(DeltaTime);
 
-	if (HasAuthority())
+	//if (HasAuthority())
 	{
 		AttackHitCheckHelper.Update(DeltaTime);
 	}
@@ -169,7 +169,7 @@ void ADSWeaponSwordBase::PostNetReceive()
 
 void ADSWeaponSwordBase::RequestHitCheckStart()
 {
-	if (HasAuthority())
+	//if (HasAuthority())
 	{
 		UE_LOG(LogClass, Warning, TEXT("[WeaponDebugLog] Request hit check start."));
 		AttackHitCheckHelper.HitCheckStart();
@@ -178,7 +178,7 @@ void ADSWeaponSwordBase::RequestHitCheckStart()
 
 void ADSWeaponSwordBase::RequestHitCheckEnd()
 {
-	if (HasAuthority())
+	//if (HasAuthority())
 	{
 		UE_LOG(LogClass, Warning, TEXT("[WeaponDebugLog] Request hit check end."));
 		AttackHitCheckHelper.HitCheckEnd();
@@ -290,7 +290,7 @@ void FDSAttackHitCheckHelper::Update(float DeltaTime)
 void FDSAttackHitCheckHelper::HitCheckStart()
 {
 	// Prepare new attack sequence hit check
-	//UE_LOG(LogClass, Warning, TEXT("[HitCheckDebugLog] AttackCheckStart"));
+	//UE_LOG(LogClass, Warning, TEXT("[HitCheckDebugLog] AttackCheckStart, Role : %d"), OwnerPrivate->GetLocalRole());
 
 	// Add ignored actor
 	if (OwnerPrivate.IsValid())

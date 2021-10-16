@@ -152,6 +152,7 @@ public:
 
 protected:
 	void ProcessHit(const FTakeHitInfo& PlayHitInfo);
+	void SimulateTakeDamage();
 	void Die();
 
 protected:
