@@ -99,7 +99,8 @@ protected:
 public:
 	void WeaponArmed();
 	void WeaponUnarmed(bool bPlayAnim = true);
-	
+	virtual void OnAttackEnd() {};
+
 public:
 	void SetWeaponArmed(bool bIsArmed);
 	bool IsWeaponArmed() const { return bWeaponArmed; }

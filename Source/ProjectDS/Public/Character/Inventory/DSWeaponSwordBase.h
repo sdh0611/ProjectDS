@@ -163,20 +163,19 @@ public:
 	void RequestHitCheckEnd();
 	void RequestComboCheckStart();
 	void RequestComboCheckEnd();
-	void OnAttackMontageEnd(class UAnimMontage* AttackAnimMontage, bool bInterrupted);
+	virtual void OnAttackEnd() override;
 
 protected:
 	virtual bool DoAttack() override;
 	virtual void InternalEquipped() override;
 	virtual void InternalUnequipped() override;
-	void SubscribeWeaponAnimDelegate(bool bSubscribe);
+	void SubscribeWeaponAnimDelegate();
+	void OnAttackMontageEnd(class UAnimMontage* AttackAnimMontage, bool bInterrupted);
 
 private:
 	FDSWeaponAttackSequence* GetAttackSequence(int32 Index);
 
 public:
-	FTimerHandle MoveInputTimer;
-
 	UPROPERTY(EditAnywhere)
 	FDSAttackHitCheckHelper AttackHitCheckHelper;
 
@@ -188,5 +187,8 @@ protected:
 	TArray<FDSWeaponAttackSequence> AttackSequence;
 
 	uint8 bEnableComboInput : 1;
+
+private:
+	FOnMontageEnded OnAttackMontageEnded;
 
 };

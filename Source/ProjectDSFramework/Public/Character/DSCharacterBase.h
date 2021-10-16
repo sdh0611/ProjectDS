@@ -113,6 +113,8 @@ public:
 	bool WasCharacterRecentlyRendered(float Tolerance = KINDA_SMALL_NUMBER) const;
 	void RotateToDesired();
 	void OnAttackHit();
+	void SubscribeMontageEndedDelegate(FOnMontageEnded& InDelegate, class UAnimMontage* AnimMontageToBind = nullptr);
+	void UnsubscribeMontageEndedDelegate(class UAnimMontage* AnimMontageToBind = nullptr);
 
 public:
 	// Deprecated

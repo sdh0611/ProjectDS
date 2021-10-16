@@ -3,7 +3,7 @@
 
 #include "DSAnimNotify_NotifyAttackEnd.h"
 #include "DSCharacterBase.h"
-#include "DSWeaponSwordBase.h"
+#include "DSWeapon.h"
 
 
 UDSAnimNotify_NotifyAttackEnd::UDSAnimNotify_NotifyAttackEnd(const FObjectInitializer& ObjectInitializer)
@@ -14,16 +14,17 @@ UDSAnimNotify_NotifyAttackEnd::UDSAnimNotify_NotifyAttackEnd(const FObjectInitia
 void UDSAnimNotify_NotifyAttackEnd::BranchingPointNotify(FBranchingPointNotifyPayload & BranchingPointPayload)
 {
 	Super::BranchingPointNotify(BranchingPointPayload);
+
 	if (BranchingPointPayload.SkelMeshComponent && BranchingPointPayload.SkelMeshComponent->GetOwner())
 	{
 		ADSCharacterBase* DSCharacter = Cast<ADSCharacterBase>(BranchingPointPayload.SkelMeshComponent->GetOwner());
 		if (IsValid(DSCharacter))
 		{
-			ADSWeaponSwordBase* Weapon = DSCharacter->GetCurrentWeapon<ADSWeaponSwordBase>();
+			ADSWeapon* Weapon = DSCharacter->GetCurrentWeapon<ADSWeapon>();
 			if (IsValid(Weapon))
 			{
 				// TODO : 해당 노티파이를 쓰지 않을 수 있도록 AnimMontage의 FAnimMontageInstance.OnMontageEnded 딜리게이트를 활용할 방안을 찾아보자.
-				//Weapon->AttackEnd();
+				//Weapon->OnAttackEnd();
 			}
 		}
 	}

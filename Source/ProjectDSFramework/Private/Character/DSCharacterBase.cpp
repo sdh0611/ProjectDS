@@ -133,6 +133,7 @@ void ADSCharacterBase::Falling()
 	if (DSMovement)
 	{
 		DSMovement->bOrientRotationToMovement = false;
+		DSMovement->bUseControllerDesiredRotation = false;
 	}
 
 }
@@ -214,10 +215,6 @@ void ADSCharacterBase::StartJump()
 	if (IsMoveInputAllowed(EActiveInputFlag::InputJump) && !bPressedJump)
 	{
 		Jump();
-		if (IsValid(DSMovement))
-		{
-			DSMovement->bOrientRotationToMovement = false;
-		}
 	}
 }
 
@@ -437,12 +434,18 @@ void ADSCharacterBase::Landed(const FHitResult & Hit)
 	const uint16 MoveInputToEnable = (EActiveInputFlag::InputJump | EActiveInputFlag::InputEquipWeapon);
 	EnableCharacterInput(MoveInputToEnable);
 
-	ADSPlayerControllerBase* Possessor = GetController<ADSPlayerControllerBase>();
-	if (IsValid(Possessor) && !Possessor->IsTargeting())
+	if (DSMovement)
 	{
-		if (DSMovement)
+		DSMovement->bUseControllerDesiredRotation = true;
+
+		ADSPlayerControllerBase* Possessor = GetController<ADSPlayerControllerBase>();
+		if (IsValid(Possessor))
 		{
-			DSMovement->bOrientRotationToMovement = false;
+			DSMovement->bOrientRotationToMovement = !Possessor->IsTargeting();
+		}
+		else
+		{
+			DSMovement->bOrientRotationToMovement = true;
 		}
 	}
 }
@@ -541,6 +544,7 @@ void ADSCharacterBase::OnOwnerLockedOnTarget()
 	if (DSMovement)
 	{
 		DSMovement->bOrientRotationToMovement = false;
+		DSMovement->bUseControllerDesiredRotation = true;
 	}
 
 	bTargeting = true;
@@ -613,6 +617,37 @@ void ADSCharacterBase::OnAttackHit()
 	{
 		DSPC->OnAttackHit();
 	}
+}
+
+void ADSCharacterBase::SubscribeMontageEndedDelegate(FOnMontageEnded & InDelegate, UAnimMontage * AnimMontageToBind)
+{
+	if (GetMesh())
+	{
+		UAnimInstance* CharacterAnimInstance = GetMesh()->GetAnimInstance();
+		if (IsValid(CharacterAnimInstance))
+		{
+			CharacterAnimInstance->Montage_SetEndDelegate(InDelegate, AnimMontageToBind);
+		}
+	}
+
+}
+
+void ADSCharacterBase::UnsubscribeMontageEndedDelegate(UAnimMontage * AnimMontageToBind)
+{
+	if (GetMesh())
+	{
+		UAnimInstance* CharacterAnimInstance = GetMesh()->GetAnimInstance();
+		if (IsValid(CharacterAnimInstance))
+		{
+			// Unbind delegates so they don't get called as well
+			FAnimMontageInstance* MontageInstance = CharacterAnimInstance->GetActiveInstanceForMontage(AnimMontageToBind);
+			if (MontageInstance)
+			{
+				MontageInstance->OnMontageEnded.Unbind();
+			}
+		}
+	}
+
 }
 
 float ADSCharacterBase::PlayMontage(UAnimMontage * MontageToPlay, float PlayRate, float StartPosition, bool bStopAllMontage, float BlendOutTime)

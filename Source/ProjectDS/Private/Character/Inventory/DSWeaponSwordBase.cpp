@@ -19,6 +19,7 @@ void ADSWeaponSwordBase::BeginPlay()
 	Super::BeginPlay();
 
 	AttackHitCheckHelper.Initialize(this);
+	SubscribeWeaponAnimDelegate();
 }
 
 void ADSWeaponSwordBase::InternalUpdateWeapon(float DeltaTime)
@@ -60,58 +61,6 @@ bool ADSWeaponSwordBase::CanAttack() const
 	return bCanAttack;
 }
 
-//bool ADSWeaponSwordBase::DoAttack()
-//{
-//	if (OwnerCharacter.IsValid())
-//	{
-//		const int32 NextCombo = CurrentCombo + 1;
-//		FDSWeaponAttackSequence* Sequence = GetAttackSequence(NextCombo);
-//		if (Sequence)
-//		{
-//			bool bCanAttack = false;
-//			if (!Sequence->IsAttacking())
-//			{
-//				bCanAttack = true;
-//			}
-//			else if (Sequence->CanCombo() && AttackSequence.IsValidIndex(NextCombo))
-//			{
-//				// Reset prev attack sequence
-//				FDSWeaponAttackSequence* PrevSequence = GetAttackSequence(CurrentCombo);
-//				if (PrevSequence)
-//				{
-//					Sequence->Reset();
-//				}
-//
-//				// Get next attack sequence
-//				Sequence = GetAttackSequence(NextCombo);
-//				if (Sequence)
-//				{
-//					bCanAttack = true;
-//				}
-//			}
-//
-//			if (bCanAttack)
-//			{
-//				CurrentCombo = NextCombo;
-//
-//				Sequence->Attack();
-//				DisableCharacterMovementInput();
-//				//OwnerCharacter->SetCharacterInputFlag(ADSCharacterBase::EActiveInputFlag::InputAll);
-//				//OwnerCharacter->DisableCharacterInput(ADSCharacterBase::EActiveInputFlag::InputJump | ADSCharacterBase::EActiveInputFlag::InputEquipWeapon);
-//				//GetWorldTimerManager().SetTimer(MoveInputTimer, this, &ADSWeaponSwordBase::DisableCharacterMovement, Sequence->GetMoveAllowTimeInterval(), false);
-//				if (Sequence->AttackAnim.WeaponAnim)
-//				{
-//					OwnerCharacter->PlayAnimMontage(Sequence->AttackAnim.WeaponAnim, Sequence->AttackAnim.PlayRate);
-//				}
-//			}
-//
-//			return bCanAttack;
-//		}
-//	}
-//
-//	return false;
-//}
-
 bool ADSWeaponSwordBase::DoAttack()
 {
 	if (OwnerCharacter.IsValid())
@@ -149,14 +98,19 @@ bool ADSWeaponSwordBase::DoAttack()
 				AttackHitCheckHelper.Reset();
 			}
 
+			// Unbind End prev weapon anim delegate
+			if (Sequence)
+			{
+				OwnerCharacter->UnsubscribeMontageEndedDelegate(Sequence->AttackAnim.WeaponAnim);
+			}
+
 			// Update attack sequence
 			Sequence = NextSequence;
 			Sequence->Attack();
 			if (Sequence->AttackAnim.WeaponAnim)
 			{
-				// TODO : 
 				OwnerCharacter->PlayAnimMontage(Sequence->AttackAnim.WeaponAnim, Sequence->AttackAnim.PlayRate);
-				
+				OwnerCharacter->SubscribeMontageEndedDelegate(OnAttackMontageEnded, Sequence->AttackAnim.WeaponAnim);
 			}
 
 			// Character
@@ -171,6 +125,8 @@ bool ADSWeaponSwordBase::DoAttack()
 
 void ADSWeaponSwordBase::InternalEquipped()
 {
+	Super::InternalEquipped();
+
 }
 
 const FDSWeaponAttackSequence* ADSWeaponSwordBase::GetAttackSequence(int32 Index) const
@@ -250,6 +206,13 @@ void ADSWeaponSwordBase::RequestComboCheckEnd()
 
 void ADSWeaponSwordBase::OnAttackMontageEnd(class UAnimMontage* AttackAnimMontage, bool bInterrupted)
 {
+	OnAttackEnd();
+}
+
+void ADSWeaponSwordBase::OnAttackEnd()
+{
+	Super::OnAttackEnd();
+
 	FDSWeaponAttackSequence* CurSequence = GetAttackSequence(CurrentCombo);
 	if (CurSequence)
 	{
@@ -268,13 +231,13 @@ void ADSWeaponSwordBase::OnAttackMontageEnd(class UAnimMontage* AttackAnimMontag
 void ADSWeaponSwordBase::InternalUnequipped()
 {
 	Super::InternalUnequipped();
-	
 
 	AttackHitCheckHelper.Reset();
 }
 
-void ADSWeaponSwordBase::SubscribeWeaponAnimDelegate(bool bSubscribe)
+void ADSWeaponSwordBase::SubscribeWeaponAnimDelegate()
 {
+	OnAttackMontageEnded.BindUObject(this, &ADSWeaponSwordBase::OnAttackMontageEnd);
 }
 
 void FDSAttackHitCheckHelper::Initialize(ADSWeaponSwordBase * OwnerSwordWeapon)
