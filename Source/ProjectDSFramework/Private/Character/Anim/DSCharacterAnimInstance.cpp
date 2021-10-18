@@ -17,6 +17,10 @@ UDSCharacterAnimInstance::UDSCharacterAnimInstance()
 	CurrentSpeed2D = 0.f;
 	RunAnimPlayRate = 1.f;
 	SpeedThresholdToCalcRunAnimPlayRate = 300.f;
+
+	WeaponLeftHandIKSocketName = TEXT("ik_lefthand");
+	LeftHandIKBoneAdditiveOffset = FVector::ZeroVector;
+	LeftHandIKAlpha = 0.f;
 }
 
 void UDSCharacterAnimInstance::NativeInitializeAnimation()
@@ -57,6 +61,9 @@ void UDSCharacterAnimInstance::NativeUpdateAnimation(float DeltaSeconds)
 				UpdateMoveDirection(DeltaSeconds, DSCharacter->GetActorRotation(), DSMovement->Velocity);
 			}
 		}
+	
+		// Get left hand IK location
+		UpdateLeftHandIK(DSCharacter);
 	}
 }
 
@@ -99,5 +106,16 @@ void UDSCharacterAnimInstance::UpdateMoveDirection(float DeltaSeconds, const FRo
 	else
 	{
 		MoveDirection = 0.f;
+	}
+}
+
+void UDSCharacterAnimInstance::UpdateLeftHandIK(ADSCharacterBase * OwnerCharacter)
+{
+	if (IsValid(OwnerCharacter))
+	{
+		LeftHandIKAlpha = bArmed ? 1.f : 0.f;
+		LeftHandIKEffectorLocation = OwnerCharacter->GetWeaponSocketLocation(WeaponLeftHandIKSocketName);
+		//LeftHandIKEffectorLocation = OwnerCharacter->GetWeaponSocketComponentLocation(WeaponLeftHandIKSocketName);
+		//LeftHandIKEffectorLocation += LeftHandIKBoneAdditiveOffset;
 	}
 }

@@ -42,6 +42,7 @@ ADSCharacterBase::ADSCharacterBase(const FObjectInitializer& ObjectInitializer)
 
 	ActiveMoveInputFlag = EActiveInputFlag::InputAll;
 	bTargeting = false;
+
 }
 
 // Called when the game starts or when spawned
@@ -441,16 +442,7 @@ void ADSCharacterBase::Landed(const FHitResult & Hit)
 	if (DSMovement)
 	{
 		DSMovement->bUseControllerDesiredRotation = true;
-
-		ADSPlayerControllerBase* Possessor = GetController<ADSPlayerControllerBase>();
-		if (IsValid(Possessor))
-		{
-			DSMovement->bOrientRotationToMovement = !Possessor->IsTargeting();
-		}
-		else
-		{
-			DSMovement->bOrientRotationToMovement = true;
-		}
+		DSMovement->bOrientRotationToMovement = !IsTargeting();
 	}
 }
 
@@ -518,6 +510,41 @@ bool ADSCharacterBase::IsWalking() const
 bool ADSCharacterBase::IsTargeting() const
 {
 	return bTargeting;
+}
+
+FVector ADSCharacterBase::GetWeaponSocketLocation(const FName & SocketName) const
+{
+	FVector SocketLocation = FVector::ZeroVector;
+
+	if (IsValid(CurrentWeapon) && CurrentWeapon->IsWeaponArmed())
+	{
+		SocketLocation = CurrentWeapon->GetSocketLocation(SocketName);
+	}
+
+	return SocketLocation;
+}
+
+FVector ADSCharacterBase::GetWeaponSocketComponentLocation(const FName & SocketName) const
+{
+	FVector SocketLocation = FVector::ZeroVector;
+
+	if (IsValid(CurrentWeapon) && CurrentWeapon->IsWeaponArmed())
+	{
+		SocketLocation = CurrentWeapon->GetSocketLocation(SocketName);
+		if (GetMesh())
+		{
+			FVector BoneLoc;
+			FRotator NotUseRot;
+			GetMesh()->TransformToBoneSpace(TEXT("hand_l"), SocketLocation, FRotator::ZeroRotator, BoneLoc, NotUseRot);
+			SocketLocation = BoneLoc;
+
+			//SocketLocation = GetMesh()->GetSocketTransform(TEXT("hand_l"), RTS_Actor).TransformPosition(SocketLocation);
+			//SocketLocation = GetMesh()->GetSocketTransform(TEXT("hand_l"), RTS_Component).TransformPosition(SocketLocation);
+			//SocketLocation = GetMesh()->GetBoneTransform(GetMesh()->GetBoneIndex(TEXT("hand_l"))).TransformPosition(SocketLocation);
+		}
+	}
+
+	return SocketLocation;
 }
 
 bool ADSCharacterBase::IsMoveInputAllowed(uint16 TestInput) const

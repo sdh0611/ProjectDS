@@ -103,6 +103,8 @@ public:
 	bool IsSprinting() const;
 	bool IsWalking() const;
 	bool IsTargeting() const;
+	FVector GetWeaponSocketLocation(const FName & SocketName) const;
+	FVector GetWeaponSocketComponentLocation(const FName & SocketName) const;
 	EActiveInputFlag GetActiveMoveInputFlag() const { return ActiveMoveInputFlag; }
 	bool IsMoveInputAllowed(uint16 TestInput) const;
 	void SetCharacterInputFlag(uint16 NewFlag);

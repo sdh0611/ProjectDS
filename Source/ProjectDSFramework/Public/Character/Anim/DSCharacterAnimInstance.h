@@ -31,6 +31,7 @@ protected:
 	// ~ Begin UDSCharacterAnimInstance Interface
 	void CalcRunAnimPlayRate(const float CurrentSpeed, const float SpeedThreshold);
 	void UpdateMoveDirection(float DeltaSeconds, const FRotator& ActorRotation, const FVector& Velocity);
+	void UpdateLeftHandIK(class ADSCharacterBase* OwnerCharacter);
 	// ~ End UDSCharacterAnimInstance Interface
 
 protected:
@@ -61,4 +62,17 @@ protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
 	float MoveDirection;
 
+	UPROPERTY(EditDefaultsOnly, Category = HandIK)
+	FName WeaponLeftHandIKSocketName;
+	
+	UPROPERTY(EditDefaultsOnly, Category = HandIK)
+	FVector LeftHandIKBoneAdditiveOffset;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	FVector LeftHandIKEffectorLocation;
+
+	
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
+	float LeftHandIKAlpha;
 };
