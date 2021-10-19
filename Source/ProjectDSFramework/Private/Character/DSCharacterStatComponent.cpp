@@ -3,6 +3,7 @@
 
 #include "DSCharacterStatComponent.h"
 #include "DSCharacterBase.h"
+#include "Net/UnrealNetwork.h"
 
 // Sets default values for this component's properties
 UDSCharacterStatComponent::UDSCharacterStatComponent()
@@ -16,6 +17,8 @@ UDSCharacterStatComponent::UDSCharacterStatComponent()
 	CurrentHealth = MaxHealth;
 	Attack = 10.f;
 	Defence = 10.f;
+
+	SetIsReplicated(true);
 }
 
 
@@ -29,6 +32,18 @@ void UDSCharacterStatComponent::BeginPlay()
 	{
 		CachedOwnerPrivate = NewOwner;
 	}
+}
+
+void UDSCharacterStatComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+
+	DOREPLIFETIME(UDSCharacterStatComponent, CurrentHealth);
+}
+
+void UDSCharacterStatComponent::TakeDamage(float Damage, FDamageEvent const & DamageEvent)
+{
+	SetCurrentHealth(GetCurrentHealth() - Damage);
 }
 
 void UDSCharacterStatComponent::SetMaxHealth(float NewMaxHealth)

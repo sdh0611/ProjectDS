@@ -25,6 +25,14 @@ protected:
 	virtual void BeginPlay() override;
 
 public:
+	// ~ Begin UActorComponent Inferface
+	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
+
+	// ~ End UActorComponent Inferface
+
+public:
+	// ~ Begin UDSCharacterStatComponent Interface
+	void TakeDamage(float Damage, FDamageEvent const & DamageEvent);
 	void SetMaxHealth(float NewMaxHealth);
 	void SetCurrentHealth(float NewCurrentHealth);
 	void SetAttack(float NewAttack);
@@ -34,12 +42,13 @@ public:
 	float GetCurrentHealth() const { return CurrentHealth; }
 	float GetAttack() const { return Attack; }
 	float GetDefence() const { return Defence; }
+	// ~ End UDSCharacterStatComponent Interface
 
 private:
 	UPROPERTY(EditAnywhere, Meta = (AllowAccessPrivate = true))
 	float MaxHealth;
 
-	UPROPERTY(EditAnywhere, Meta = (AllowAccessPrivate = true))
+	UPROPERTY(EditAnywhere, Meta = (AllowAccessPrivate = true), Replicated)
 	float CurrentHealth;
 
 	UPROPERTY(EditAnywhere, Meta = (AllowAccessPrivate = true))
