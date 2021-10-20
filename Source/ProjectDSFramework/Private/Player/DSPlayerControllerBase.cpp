@@ -125,6 +125,13 @@ APawn * ADSPlayerControllerBase::GetNearestTargetOnScreen()
 					continue;
 				}
 				
+				// Check alive pawn
+				const ADSCharacterBase* DSCharacter = Cast<ADSCharacterBase>(*PawnIter);
+				if (nullptr == DSCharacter || !DSCharacter->IsAlive())
+				{
+					continue;
+				}
+
 				FVector BoundOrigin, BoundExtents;
 				(*PawnIter)->GetActorBounds(true, BoundOrigin, BoundExtents);
 				if (!BoundOrigin.IsNearlyZero() && !BoundExtents.IsNearlyZero())

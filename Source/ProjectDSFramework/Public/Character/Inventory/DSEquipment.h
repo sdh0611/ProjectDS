@@ -15,7 +15,7 @@ UCLASS(Abstract, NotPlaceable)
 class PROJECTDSFRAMEWORK_API ADSEquipment : public ADSInventoryEntity
 {
 	GENERATED_BODY()
-	
+
 public:
 	ADSEquipment();
 
@@ -31,6 +31,10 @@ public:
 	void Equipped();
 	void Unequipped();
 	FVector GetSocketLocation(const FName& SocketName);
+	const class UStaticMeshSocket* GetSocket(const FName& SocketName) const;
+	bool GetSocketRelativeLocationAndRotation(const FName& SocketName, FVector& OutLocation, FRotator& OutRotation);
+	FVector GetSocketRelativeLocation(const FName& SocketName);
+	FRotator GetSocketRelativeRotation(const FName& SocketName);
 
 protected:
 	virtual void InternalDiscard() override;

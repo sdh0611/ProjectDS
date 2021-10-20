@@ -51,6 +51,9 @@ protected:
 	uint8 bTargeting : 1;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
+	uint8 bDied : 1;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
 	float CurrentSpeed2D;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
@@ -71,8 +74,11 @@ protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	FVector LeftHandIKEffectorLocation;
 
-	
-
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
 	float LeftHandIKAlpha;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Ragdoll")
+	FPoseSnapshot DeadPoseSnapshot;
+
+
 };

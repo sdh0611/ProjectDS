@@ -171,7 +171,7 @@ void ADSWeaponSwordBase::RequestHitCheckStart()
 {
 	//if (HasAuthority())
 	{
-		UE_LOG(LogClass, Warning, TEXT("[WeaponDebugLog] Request hit check start."));
+		//UE_LOG(LogClass, Warning, TEXT("[WeaponDebugLog] Request hit check start."));
 		AttackHitCheckHelper.HitCheckStart();
 	}
 }
@@ -180,7 +180,7 @@ void ADSWeaponSwordBase::RequestHitCheckEnd()
 {
 	//if (HasAuthority())
 	{
-		UE_LOG(LogClass, Warning, TEXT("[WeaponDebugLog] Request hit check end."));
+		//UE_LOG(LogClass, Warning, TEXT("[WeaponDebugLog] Request hit check end."));
 		AttackHitCheckHelper.HitCheckEnd();
 	}
 }
@@ -259,7 +259,7 @@ void FDSAttackHitCheckHelper::Reset()
 
 	CollisionQuery.ClearIgnoredActors();
 	
-	UE_LOG(LogClass, Warning, TEXT("[HitCheckDebugLog] Reset Helper."));
+	//UE_LOG(LogClass, Warning, TEXT("[HitCheckDebugLog] Reset Helper."));
 
 	if (AttackTraceFootstep.Num() == HitCheckTraceNum)
 	{

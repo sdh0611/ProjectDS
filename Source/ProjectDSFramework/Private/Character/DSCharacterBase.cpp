@@ -14,10 +14,11 @@
 #include "DSCharacterStatComponent.h"
 #include "DrawDebugHelpers.h"
 
-FName ADSCharacterBase::SpringArmComponentName = TEXT("SpringArm");
-FName ADSCharacterBase::CameraComponentName = TEXT("Camera");
-FName ADSCharacterBase::CharacterStatComponentName = TEXT("CharacterStat");
+const FName ADSCharacterBase::SpringArmComponentName = TEXT("SpringArm");
+const FName ADSCharacterBase::CameraComponentName = TEXT("Camera");
+const FName ADSCharacterBase::CharacterStatComponentName = TEXT("CharacterStat");
 const uint16 ADSCharacterBase::RotationInputFlag = ADSCharacterBase::EActiveInputFlag::InputTurn | ADSCharacterBase::EActiveInputFlag::InputLookUp;
+const FName ADSCharacterBase::PhysicsSimulationStartBoneName = TEXT("pelvis");
 
 // Sets default values
 ADSCharacterBase::ADSCharacterBase(const FObjectInitializer& ObjectInitializer)
@@ -43,6 +44,8 @@ ADSCharacterBase::ADSCharacterBase(const FObjectInitializer& ObjectInitializer)
 	ActiveMoveInputFlag = EActiveInputFlag::InputAll;
 	bTargeting = false;
 
+	MaxHealth = 100;
+	Health = MaxHealth;
 }
 
 // Called when the game starts or when spawned
@@ -67,6 +70,8 @@ void ADSCharacterBase::BeginPlay()
 	}
 	// }} End test weapon 
 
+	// Test
+	Health = MaxHealth;
 }
 
 void ADSCharacterBase::PostInitializeComponents()
@@ -165,6 +170,40 @@ void ADSCharacterBase::SetWalking(bool bWalk)
 		else
 		{
 			DSMovement->DoWalk(bWalk);
+		}
+	}
+}
+
+void ADSCharacterBase::SetHealth(int32 NewHealth)
+{
+	Health = FMath::Clamp<int32>(NewHealth, 0.f, MaxHealth);
+}
+
+void ADSCharacterBase::ActiveRagdoll()
+{
+	if (GetMesh())
+	{
+		//GetMesh()->SetSimulatePhysics(true);
+		GetMesh()->SetCollisionObjectType(ECollisionChannel::ECC_PhysicsBody);
+		GetMesh()->SetAllBodiesBelowSimulatePhysics(PhysicsSimulationStartBoneName, true, true);
+		if (GetCapsuleComponent())
+		{
+			GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+		}
+	}
+
+}
+
+void ADSCharacterBase::DeactiveRagdoll()
+{
+	if (GetMesh())
+	{
+		//GetMesh()->SetSimulatePhysics(false);
+		GetMesh()->SetCollisionObjectType(ECollisionChannel::ECC_Pawn);
+		GetMesh()->SetAllBodiesSimulatePhysics(false);
+		if (GetCapsuleComponent())
+		{
+			GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
 		}
 	}
 }
@@ -401,6 +440,12 @@ void ADSCharacterBase::SimulateTakeDamage()
 
 void ADSCharacterBase::Die()
 {
+	if (IsLocallyControlled())
+	{
+		SetCharacterInputFlag(RotationInputFlag);
+	}
+
+	ActiveRagdoll();
 }
 
 void ADSCharacterBase::OnRep_CurrentWeapon()
@@ -412,6 +457,20 @@ void ADSCharacterBase::OnRep_HitInfo()
 {
 	UE_LOG(LogClass, Warning, TEXT("[HitDebugLog] HitInfo repliocated, damage : %f"), HitInfo.GetDamage());
 	ProcessHit(HitInfo);
+}
+
+void ADSCharacterBase::OnRep_Health()
+{
+	UE_LOG(LogClass, Warning, TEXT("[HealthDebugLog] Health replicated : %d"), Health);
+	if (!IsAlive())
+	{
+		UE_LOG(LogClass, Warning, TEXT("[HealthDebugLog] Die...."));
+		Die();
+	}
+}
+
+void ADSCharacterBase::OnRep_MaxHealth()
+{
 }
 
 bool ADSCharacterBase::ServerLockOnTarget_Validate(bool bLockOn)
@@ -452,7 +511,9 @@ void ADSCharacterBase::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Out
 
 	DOREPLIFETIME(ADSCharacterBase, CurrentWeapon);
 	DOREPLIFETIME(ADSCharacterBase, HitInfo);
-
+	DOREPLIFETIME(ADSCharacterBase, Health);
+	DOREPLIFETIME(ADSCharacterBase, MaxHealth);
+	
 	DOREPLIFETIME_CONDITION(ADSCharacterBase, bTargeting, COND_SkipOwner);
 }
 
@@ -466,16 +527,26 @@ float ADSCharacterBase::TakeDamage(float DamageAmount, FDamageEvent const & Dama
 	}
 	else
 	{
+		// Calc damage
 		FinalDamage = Super::TakeDamage(DamageAmount, DamageEvent, EventInstigator, DamageCauser);
 
-		UE_LOG(LogClass, Warning, TEXT("[TakeDamageLog] Take damage !!!"));
+		// Apply damage
+		SetHealth(GetHealth() - static_cast<int32>(FinalDamage));
 
-		// Replication test code
-		HitInfo.SetDamage(FinalDamage);
-
-		if (IsNetMode(NM_Standalone))
+		// Check died
+		if (!IsAlive())
 		{
-			OnRep_HitInfo();
+			Die();
+		}
+		else
+		{
+			// Replication test code
+			HitInfo.SetDamage(FinalDamage);
+
+			if (IsNetMode(NM_Standalone) || IsNetMode(NM_ListenServer))
+			{
+				OnRep_HitInfo();
+			}
 		}
 	}
 
@@ -512,6 +583,16 @@ bool ADSCharacterBase::IsTargeting() const
 	return bTargeting;
 }
 
+bool ADSCharacterBase::IsAlive() const
+{
+	return Health > 0;
+}
+
+float ADSCharacterBase::GetHealth() const
+{
+	return Health;
+}
+
 FVector ADSCharacterBase::GetWeaponSocketLocation(const FName & SocketName) const
 {
 	FVector SocketLocation = FVector::ZeroVector;
@@ -524,7 +605,7 @@ FVector ADSCharacterBase::GetWeaponSocketLocation(const FName & SocketName) cons
 	return SocketLocation;
 }
 
-FVector ADSCharacterBase::GetWeaponSocketComponentLocation(const FName & SocketName) const
+FVector ADSCharacterBase::GetWeaponLeftHandIKEffectorLocation(const FName & SocketName) const
 {
 	FVector SocketLocation = FVector::ZeroVector;
 
@@ -533,15 +614,10 @@ FVector ADSCharacterBase::GetWeaponSocketComponentLocation(const FName & SocketN
 		SocketLocation = CurrentWeapon->GetSocketLocation(SocketName);
 		if (GetMesh())
 		{
-			FVector BoneLoc;
-			FRotator NotUseRot;
-			GetMesh()->TransformToBoneSpace(TEXT("hand_l"), SocketLocation, FRotator::ZeroRotator, BoneLoc, NotUseRot);
-			SocketLocation = BoneLoc;
-
-			//SocketLocation = GetMesh()->GetSocketTransform(TEXT("hand_l"), RTS_Actor).TransformPosition(SocketLocation);
-			//SocketLocation = GetMesh()->GetSocketTransform(TEXT("hand_l"), RTS_Component).TransformPosition(SocketLocation);
-			//SocketLocation = GetMesh()->GetBoneTransform(GetMesh()->GetBoneIndex(TEXT("hand_l"))).TransformPosition(SocketLocation);
+			const FVector Offset = GetMesh()->GetSocketLocation(TEXT("hand_l")) - GetMesh()->GetSocketLocation(TEXT("ik_weapon_hand_l"));
+			SocketLocation += Offset;
 		}
+		//SocketLocation = CurrentWeapon->GetSocketRelativeLocation(SocketName);
 	}
 
 	return SocketLocation;

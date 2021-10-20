@@ -6,6 +6,7 @@
 #include "Components/SkeletalMeshComponent.h"
 #include "DSCharacterBase.h"
 #include "Net/UnrealNetwork.h"
+#include "Engine/StaticMeshSocket.h"
 
 FName ADSEquipment::BodyMeshName = TEXT("BodyMesh");
 
@@ -73,6 +74,52 @@ FVector ADSEquipment::GetSocketLocation(const FName & SocketName)
 	}
 
 	return FVector::ZeroVector;
+}
+
+const UStaticMeshSocket * ADSEquipment::GetSocket(const FName & SocketName) const
+{
+	UStaticMeshComponent* Body = GetBodyMesh();
+	if (Body)
+	{
+		return Body->GetSocketByName(SocketName);
+	}
+
+	return nullptr;
+}
+
+bool ADSEquipment::GetSocketRelativeLocationAndRotation(const FName & SocketName, FVector & OutLocation, FRotator & OutRotation)
+{
+	const UStaticMeshSocket* Socket = GetSocket(SocketName);
+	if (Socket)
+	{
+		OutLocation = Socket->RelativeLocation;
+		OutRotation = Socket->RelativeRotation;
+		return true;
+	}
+
+	return false;
+}
+
+FVector ADSEquipment::GetSocketRelativeLocation(const FName & SocketName)
+{
+	const UStaticMeshSocket* Socket = GetSocket(SocketName);
+	if (Socket)
+	{
+		return Socket->RelativeLocation;
+	}
+
+	return FVector::ZeroVector;
+}
+
+FRotator ADSEquipment::GetSocketRelativeRotation(const FName & SocketName)
+{
+	const UStaticMeshSocket* Socket = GetSocket(SocketName);
+	if (Socket)
+	{
+		return Socket->RelativeRotation;
+	}
+
+	return FRotator::ZeroRotator;
 }
 
 void ADSEquipment::GivenTo(ADSCharacterBase * NewOwner)

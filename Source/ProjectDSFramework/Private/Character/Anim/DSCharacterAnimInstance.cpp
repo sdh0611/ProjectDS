@@ -27,6 +27,7 @@ void UDSCharacterAnimInstance::NativeInitializeAnimation()
 {
 	Super::NativeInitializeAnimation();
 
+	SnapshotPose(DeadPoseSnapshot);
 }
 
 void UDSCharacterAnimInstance::NativeUpdateAnimation(float DeltaSeconds)
@@ -36,6 +37,8 @@ void UDSCharacterAnimInstance::NativeUpdateAnimation(float DeltaSeconds)
 	ADSCharacterBase* DSCharacter = Cast<ADSCharacterBase>(TryGetPawnOwner());
 	if (DSCharacter)
 	{
+		bDied = !DSCharacter->IsAlive();
+
 		UDSCharacterMovementComponent* DSMovement = DSCharacter->GetDSCharacterMovement();
 		if (DSMovement)
 		{
@@ -114,8 +117,8 @@ void UDSCharacterAnimInstance::UpdateLeftHandIK(ADSCharacterBase * OwnerCharacte
 	if (IsValid(OwnerCharacter))
 	{
 		LeftHandIKAlpha = bArmed ? 1.f : 0.f;
-		LeftHandIKEffectorLocation = OwnerCharacter->GetWeaponSocketLocation(WeaponLeftHandIKSocketName);
-		//LeftHandIKEffectorLocation = OwnerCharacter->GetWeaponSocketComponentLocation(WeaponLeftHandIKSocketName);
+		//LeftHandIKEffectorLocation = OwnerCharacter->GetWeaponSocketLocation(WeaponLeftHandIKSocketName);
+		LeftHandIKEffectorLocation = OwnerCharacter->GetWeaponLeftHandIKEffectorLocation(WeaponLeftHandIKSocketName);
 		//LeftHandIKEffectorLocation += LeftHandIKBoneAdditiveOffset;
 	}
 }

@@ -18,4 +18,7 @@ public:
 	UFUNCTION(Exec)
 	void WeaponUnequipTest();
 
+	UFUNCTION(Exec)
+	void TestRagdoll();
+
 };

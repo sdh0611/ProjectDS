@@ -19,3 +19,16 @@ void UDSCheatManager::WeaponUnequipTest()
 	}
 
 }
+
+void UDSCheatManager::TestRagdoll()
+{
+	APlayerController* OwnerPC = GetOuterADSPlayerControllerBase();
+	if (OwnerPC)
+	{
+		ADSCharacterBase* DSCharacter = Cast<ADSCharacterBase>(OwnerPC->GetPawn());
+		if (DSCharacter)
+		{
+			DSCharacter->TakeDamage(DSCharacter->GetHealth(), FDamageEvent(), OwnerPC, DSCharacter);
+		}
+	}
+}

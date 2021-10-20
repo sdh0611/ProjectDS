@@ -103,8 +103,10 @@ public:
 	bool IsSprinting() const;
 	bool IsWalking() const;
 	bool IsTargeting() const;
+	bool IsAlive() const;
+	float GetHealth() const;
 	FVector GetWeaponSocketLocation(const FName & SocketName) const;
-	FVector GetWeaponSocketComponentLocation(const FName & SocketName) const;
+	FVector GetWeaponLeftHandIKEffectorLocation(const FName & SocketName) const;
 	EActiveInputFlag GetActiveMoveInputFlag() const { return ActiveMoveInputFlag; }
 	bool IsMoveInputAllowed(uint16 TestInput) const;
 	void SetCharacterInputFlag(uint16 NewFlag);
@@ -123,9 +125,19 @@ public:
 	UE_DEPRECATED(21.10.11, "Use APawn::PlayAnimMontage instead.")
 	float PlayMontage(class UAnimMontage* MontageToPlay, float PlayRate = 1.f, float StartPosition = 0.f, bool bStopAllMontage = false, float BlendOutTime = 0.f);
 
+	// For ragdoll test.
+	UFUNCTION(BlueprintCallable)
+	void RagdollTest()
+	{
+		ActiveRagdoll();
+	}
+
 protected:
 	void SetSprinting(bool bSprint);
 	void SetWalking(bool bWalk);
+	void SetHealth(int32 NewHealth);
+	void ActiveRagdoll();
+	void DeactiveRagdoll();
 
 // ~ Begin player input binds
 protected:
@@ -164,6 +176,12 @@ protected:
 	UFUNCTION()
 	virtual void OnRep_HitInfo();
 
+	UFUNCTION()
+	virtual void OnRep_Health();
+
+	UFUNCTION()
+	virtual void OnRep_MaxHealth();
+
 protected:
 	UFUNCTION(Server, Reliable, WithValidation)
 	void ServerEquipWeapon(class ADSWeapon* NewEquipment);
@@ -180,12 +198,6 @@ protected:
 	UFUNCTION(Server, Reliable, WithValidation)
 	void ServerLockOnTarget(bool bLockOn);
 
-public:
-	static FName SpringArmComponentName;
-	static FName CameraComponentName;
-	static FName CharacterStatComponentName;
-	static const uint16 RotationInputFlag;
-
 protected:
 	// {{ Input binding delegates
 	DECLARE_DELEGATE_OneParam(FActionInputDelegate, bool);
@@ -198,7 +210,6 @@ public:
 
 private:
 	EActiveInputFlag ActiveMoveInputFlag;
-
 	FTimerHandle HitStopTimer;
 
 // ~ Begin replicated properties
@@ -212,6 +223,12 @@ protected:
 	// For replicate damage info
 	UPROPERTY(Transient, ReplicatedUsing=OnRep_HitInfo)
 	FTakeHitInfo HitInfo;
+
+	UPROPERTY(Transient, ReplicatedUsing=OnRep_Health, VisibleAnywhere)
+	int32 Health;
+
+	UPROPERTY(EditDefaultsOnly, ReplicatedUsing = OnRep_MaxHealth)
+	int32 MaxHealth;
 
 // ~ End replicated properties
 
@@ -234,5 +251,13 @@ protected:
 protected:
 	UPROPERTY(EditDefaultsOnly, Category = "Hit React")
 	TArray<FDSCharacterHitReaction> HitReactAnims;
+
+
+public:
+	static const FName SpringArmComponentName;
+	static const FName CameraComponentName;
+	static const FName CharacterStatComponentName;
+	static const uint16 RotationInputFlag;
+	static const FName PhysicsSimulationStartBoneName;
 
 };
