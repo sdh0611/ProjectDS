@@ -80,5 +80,6 @@ protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Ragdoll")
 	FPoseSnapshot DeadPoseSnapshot;
 
-
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Ragdoll")
+	FName DeadPoseNameForSnapshot;
 };

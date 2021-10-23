@@ -28,6 +28,7 @@ void UDSCharacterAnimInstance::NativeInitializeAnimation()
 	Super::NativeInitializeAnimation();
 
 	SnapshotPose(DeadPoseSnapshot);
+	SavePoseSnapshot(DeadPoseNameForSnapshot);
 }
 
 void UDSCharacterAnimInstance::NativeUpdateAnimation(float DeltaSeconds)
