@@ -4,7 +4,26 @@
 
 #include "CoreMinimal.h"
 #include "DSWeapon.h"
+#include "DSBaseTypes.h"
 #include "DSWeaponSwordBase.generated.h"
+
+USTRUCT()
+struct FPendingAttackData
+{
+	GENERATED_USTRUCT_BODY()
+
+	EAttackType AttackType;
+
+	FPendingAttackData()
+		: AttackType(EAttackType::None)
+	{
+	}
+
+	FPendingAttackData(EAttackType NewAttackType)
+		: AttackType(NewAttackType)
+	{
+	}
+};
 
 
 /**
@@ -25,8 +44,8 @@ protected:
 	virtual void InternalUpdateWeapon(float DeltaTime) override;
 
 public:
-	virtual bool CanAttack(EAttackInputType TryAttackType) const override;
-	virtual void TryAttack(EAttackInputType TryAttackType) override;
+	virtual bool CanHandleAttackInput(EAttackInputType InAttackInputType) const override;
+	virtual void HandleAttackInput(EAttackInputType InAttackInputType) override;
 
 	// ~ Begin AActor Interface
 	/** Returns the properties used for network replication, this needs to be overridden by all actor classes with native replicated properties */
@@ -38,5 +57,13 @@ public:
 protected:
 	virtual void InternalEquipped() override;
 	virtual void InternalUnequipped() override;
+	void DoAttack();
+	void DoGuard();
+	void DoWeaponSkill();
+
+
+private:
+	UPROPERTY(Transient) // For debug
+	TArray<FPendingAttackData> PendingAttacks;
 
 };

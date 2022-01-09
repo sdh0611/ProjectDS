@@ -38,11 +38,10 @@ public:
 	virtual void Tick(float DeltaTime) override;
 
 public:
-	virtual bool CanAttack(EAttackInputType TryAttackType) const { return IsEquipped(); }
-	virtual void TryAttack(EAttackInputType TryAttackType);
+	virtual bool CanHandleAttackInput(EAttackInputType InAttackInputType) const { return IsEquipped(); }
+	virtual void HandleAttackInput(EAttackInputType InAttackInputType);
 
 protected:
-	virtual bool DoAttack(EAttackType AttackType) { return false; }
 	virtual void InternalUpdateWeapon(float DeltaTime);
 	virtual void InternalEquipped() override;
 	virtual void InternalUnequipped() override;

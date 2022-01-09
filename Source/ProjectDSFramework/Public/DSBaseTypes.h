@@ -18,7 +18,8 @@ enum class EAttackInputType : uint8
 
 enum class EAttackType : uint8
 {
-	Attack = 0,
+	None = 0,
+	Attack,
 	ChargedAttack,
 	WeaponSkill,
 };

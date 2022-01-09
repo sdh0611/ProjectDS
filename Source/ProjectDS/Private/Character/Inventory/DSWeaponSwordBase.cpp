@@ -24,9 +24,9 @@ void ADSWeaponSwordBase::InternalUpdateWeapon(float DeltaTime)
 
 }
 
-bool ADSWeaponSwordBase::CanAttack(EAttackInputType TryAttackType) const
+bool ADSWeaponSwordBase::CanHandleAttackInput(EAttackInputType TryAttackType) const
 {
-	const bool bCanAttack = Super::CanAttack(TryAttackType) && IsWeaponArmed();
+	const bool bCanAttack = Super::CanHandleAttackInput(TryAttackType) && IsWeaponArmed();
 
 	return bCanAttack;
 }
@@ -37,9 +37,25 @@ void ADSWeaponSwordBase::InternalEquipped()
 
 }
 
-void ADSWeaponSwordBase::TryAttack(EAttackInputType TryAttackType)
+void ADSWeaponSwordBase::HandleAttackInput(EAttackInputType InAttackInputType)
 {
-	Super::TryAttack(TryAttackType);
+	Super::HandleAttackInput(InAttackInputType);
+
+	EAttackType TryAttackType = EAttackType::None;
+
+	switch (InAttackInputType)
+	{
+	case EAttackInputType::Attack:
+		DoAttack();
+		break;
+	case EAttackInputType::AltAttack:
+		DoGuard();
+		break;
+	case EAttackInputType::WeaponSkill:
+		DoWeaponSkill();
+		break;
+	}
+
 }
 
 void ADSWeaponSwordBase::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -57,5 +73,19 @@ void ADSWeaponSwordBase::PostNetReceive()
 void ADSWeaponSwordBase::InternalUnequipped()
 {
 	Super::InternalUnequipped();
+
+}
+
+void ADSWeaponSwordBase::DoAttack()
+{
+}
+
+void ADSWeaponSwordBase::DoGuard()
+{
+
+}
+
+void ADSWeaponSwordBase::DoWeaponSkill()
+{
 
 }

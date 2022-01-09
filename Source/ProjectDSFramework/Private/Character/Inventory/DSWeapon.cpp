@@ -55,7 +55,7 @@ void ADSWeapon::Tick(float DeltaTime)
 	}
 
 }
-void ADSWeapon::TryAttack(EAttackInputType TryAttackType)
+void ADSWeapon::HandleAttackInput(EAttackInputType InAttackInputType)
 {
 
 }
