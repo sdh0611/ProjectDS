@@ -120,12 +120,12 @@ void ADSCharacterBase::SetupPlayerInputComponent(UInputComponent* PlayerInputCom
 		PlayerInputComponent->BindAction(TEXT("Crouch"), EInputEvent::IE_Pressed, this, &ADSCharacterBase::ToggleCrouch);
 		PlayerInputComponent->BindAction(TEXT("ToggleWeapon"), EInputEvent::IE_Pressed, this, &ADSCharacterBase::ToggleWeapon);
 		PlayerInputComponent->BindAction(TEXT("Attack"), EInputEvent::IE_Pressed, this, &ADSCharacterBase::Attack);
+		PlayerInputComponent->BindAction(TEXT("AltAttack"), EInputEvent::IE_Pressed, this, &ADSCharacterBase::AltAttackPressed);
+		PlayerInputComponent->BindAction(TEXT("AltAttack"), EInputEvent::IE_Released, this, &ADSCharacterBase::AltAttackReleased);
 		PlayerInputComponent->BindAction<FActionInputDelegate>(TEXT("Sprint"), EInputEvent::IE_Pressed, this, &ADSCharacterBase::Sprint, true);
 		PlayerInputComponent->BindAction<FActionInputDelegate>(TEXT("Sprint"), EInputEvent::IE_Released, this, &ADSCharacterBase::Sprint, false);
 		PlayerInputComponent->BindAction<FActionInputDelegate>(TEXT("Walk"), EInputEvent::IE_Pressed, this, &ADSCharacterBase::Walk, true);
 		PlayerInputComponent->BindAction<FActionInputDelegate>(TEXT("Walk"), EInputEvent::IE_Released, this, &ADSCharacterBase::Walk, false);
-		PlayerInputComponent->BindAction<FActionInputDelegate>(TEXT("Guard"), EInputEvent::IE_Pressed, this, &ADSCharacterBase::Guard, true);
-		PlayerInputComponent->BindAction<FActionInputDelegate>(TEXT("Guard"), EInputEvent::IE_Released, this, &ADSCharacterBase::Guard, false);
 	}
 
 }
@@ -326,26 +326,36 @@ void ADSCharacterBase::ToggleWeapon()
 
 void ADSCharacterBase::Attack()
 {
+	DoAttack(EAttackInputType::Attack);
+}
+
+void ADSCharacterBase::AltAttackPressed()
+{
+	DoAttack(EAttackInputType::AltAttack);
+}
+
+void ADSCharacterBase::AltAttackReleased()
+{
+	DoAttack(EAttackInputType::AltAttackRelease);
+}
+
+void ADSCharacterBase::DoAttack(EAttackInputType AttackType)
+{
 	// Contain autonomous proxy, authority
 	if (GetLocalRole() > ROLE_SimulatedProxy)
 	{
 		if (IsMoveInputAllowed(EActiveInputFlag::InputAttack))
 		{
-			if (IsValid(CurrentWeapon) && CurrentWeapon->CanAttack())
+			if (IsValid(CurrentWeapon) && CurrentWeapon->CanAttack(AttackType))
 			{
-				CurrentWeapon->TryAttack();
+				CurrentWeapon->TryAttack(AttackType);
 				if (IsNetMode(NM_Client))
 				{
-					ServerDoAttack();
+					ServerDoAttack(AttackType);
 				}
 			}
 		}
 	}
-}
-
-void ADSCharacterBase::Guard(bool bGuard)
-{
-
 
 }
 
@@ -816,12 +826,12 @@ void ADSCharacterBase::ServerToggleWeapon_Implementation()
 	}
 }
 
-bool ADSCharacterBase::ServerDoAttack_Validate()
+bool ADSCharacterBase::ServerDoAttack_Validate(EAttackInputType AttackType)
 {
 	return true;
 }
 
-void ADSCharacterBase::ServerDoAttack_Implementation()
+void ADSCharacterBase::ServerDoAttack_Implementation(EAttackInputType AttackType)
 {
-	Attack();
+	DoAttack(AttackType);
 }

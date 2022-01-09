@@ -5,6 +5,24 @@
 #include "CoreMinimal.h"
 #include "DSBaseTypes.generated.h"
 
+UENUM()
+enum class EAttackInputType : uint8
+{
+	Attack = 0,
+	AttackRelease,
+	AltAttack,
+	AltAttackRelease,
+	ChargedAttack,
+	WeaponSkill,
+};
+
+enum class EAttackType : uint8
+{
+	Attack = 0,
+	ChargedAttack,
+	WeaponSkill,
+};
+
 USTRUCT()
 struct FTakeHitInfo
 {

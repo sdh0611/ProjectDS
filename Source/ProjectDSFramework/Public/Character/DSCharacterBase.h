@@ -153,8 +153,12 @@ protected:
 	void ToggleCrouch();
 	void ToggleWeapon();
 	void Attack();
-	void Guard(bool bGuard);
+	void AltAttackPressed();
+	void AltAttackReleased();
 // ~ End player input binds
+
+private:
+	void DoAttack(EAttackInputType AttackType);
 
 public:
 	virtual void EquipWeapon(ADSWeapon* Equipped);
@@ -193,7 +197,7 @@ protected:
 	void ServerToggleWeapon();
 
 	UFUNCTION(Server, Reliable, WithValidation)
-	void ServerDoAttack();
+	void ServerDoAttack(EAttackInputType AttackType);
 
 	UFUNCTION(Server, Reliable, WithValidation)
 	void ServerLockOnTarget(bool bLockOn);
