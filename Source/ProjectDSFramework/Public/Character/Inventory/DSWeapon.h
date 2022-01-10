@@ -5,9 +5,11 @@
 #include "CoreMinimal.h"
 #include "Character/Inventory/DSEquipment.h"
 #include "DSBaseTypes.h"
+#include "DSWeaponAction.h"
 #include "DSWeapon.generated.h"
 
 class UAnimMontage;
+class UDSWeaponAction;
 
 USTRUCT()
 struct FDSWeaponAnimData
@@ -27,6 +29,19 @@ public:
 	{
 	}
 
+};
+
+
+USTRUCT()
+struct FDSWeaponActionData
+{
+	GENERATED_USTRUCT_BODY()
+
+	UPROPERTY(EditDefaultsOnly)
+	EAttackInputType AttackInputType;
+
+	UPROPERTY(EditDefaultsOnly, Instanced, Category = "WeaponAction")
+	UDSWeaponAction* WeaponActionClass;
 };
 
 
@@ -89,6 +104,9 @@ protected:
 
 	UPROPERTY(EditDefaultsOnly, Category = Anim)
 	UAnimMontage* UnequipAnim;
+
+	UPROPERTY(EditDefaultsOnly, Category = "WeaponAction")
+	TArray<FDSWeaponActionData> WeaponActions;
 
 protected:
 	UPROPERTY(Transient, ReplicatedUsing=OnRep_WeaponArmed)

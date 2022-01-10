@@ -30,7 +30,6 @@ struct FPendingAttackData
 	}
 };
 
-
 /**
  * 
  */
@@ -76,6 +75,9 @@ protected:
 
 	UPROPERTY(EditDefaultsOnly, Category = Guard)
 	FDSWeaponAnimData GuardAnim;
+
+
+
 
 private:
 	UPROPERTY(Transient) // For debug
