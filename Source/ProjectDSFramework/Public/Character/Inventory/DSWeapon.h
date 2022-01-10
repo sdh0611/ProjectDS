@@ -9,6 +9,26 @@
 
 class UAnimMontage;
 
+USTRUCT()
+struct FDSWeaponAnimData
+{
+	GENERATED_USTRUCT_BODY()
+
+public:
+	UPROPERTY(EditDefaultsOnly)
+	UAnimMontage* WeaponAnim;
+	
+	UPROPERTY(EditDefaultsOnly)
+	float PlayRate;
+
+	FDSWeaponAnimData()
+		: WeaponAnim(nullptr)
+		, PlayRate(1.f)
+	{
+	}
+
+};
+
 
 /**
  * 
