@@ -41,7 +41,7 @@ struct FDSWeaponActionData
 	EAttackInputType AttackInputType;
 
 	UPROPERTY(EditDefaultsOnly, Instanced, Category = "WeaponAction")
-	UDSWeaponAction* WeaponActionClass;
+	UDSWeaponAction* WeaponAction;
 };
 
 

@@ -22,6 +22,16 @@ void ADSWeapon::BeginPlay()
 {
 	Super::BeginPlay();
 
+	if (WeaponActions.Num() > 0)
+	{
+		for (FDSWeaponActionData& InWeaponAction : WeaponActions)
+		{
+			if (InWeaponAction.WeaponAction)
+			{
+				InWeaponAction.WeaponAction->SetOwnerWeapon(this);
+			}
+		}
+	}
 }
 
 void ADSWeapon::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -42,7 +52,6 @@ void ADSWeapon::PostNetReceive()
 {
 	Super::PostNetReceive();
 
-	//CheckExpiredPendingAttack();
 }
 
 void ADSWeapon::Tick(float DeltaTime)
@@ -54,6 +63,18 @@ void ADSWeapon::Tick(float DeltaTime)
 		InternalUpdateWeapon(DeltaTime);
 	}
 
+	if (WeaponActions.Num() > 0)
+	{
+		for (FDSWeaponActionData& InWeaponAction : WeaponActions)
+		{
+			if (InWeaponAction.WeaponAction && InWeaponAction.WeaponAction->ShouldTickAction())
+			{
+				InWeaponAction.WeaponAction->TickAction(DeltaTime);
+			}
+		}
+
+	}
+
 }
 void ADSWeapon::HandleAttackInput(EAttackInputType InAttackInputType)
 {
@@ -62,6 +83,7 @@ void ADSWeapon::HandleAttackInput(EAttackInputType InAttackInputType)
 
 void ADSWeapon::InternalUpdateWeapon(float DeltaTime)
 {
+
 }
 
 void ADSWeapon::InternalEquipped()

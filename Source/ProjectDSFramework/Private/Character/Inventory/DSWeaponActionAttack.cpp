@@ -2,4 +2,42 @@
 
 
 #include "Character/Inventory/DSWeaponActionAttack.h"
+#include "Character/Inventory/DSWeapon.h"
 
+UDSWeaponActionAttack::UDSWeaponActionAttack()
+{
+    bNeedHitCheck = false;
+    ElapsedTickTime = 0.f;
+}
+
+void UDSWeaponActionAttack::TickAction(float DeltaTime)
+{
+    if (ElapsedTickTime > CheckInterval)
+    {
+        InternalHitCheck(DeltaTime);
+    }
+    else
+    {
+        ElapsedTickTime += DeltaTime;
+    }
+}
+
+void UDSWeaponActionAttack::DoAction()
+{
+    bNeedHitCheck = true;
+}
+
+void UDSWeaponActionAttack::StopAction()
+{
+    bNeedHitCheck = false;
+    ElapsedTickTime = 0.f;
+}
+
+bool UDSWeaponActionAttack::ShouldTickAction()
+{
+    return bNeedHitCheck;
+}
+
+void UDSWeaponActionAttack::InternalHitCheck(float DeltaTime)
+{
+}

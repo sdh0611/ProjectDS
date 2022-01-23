@@ -18,7 +18,8 @@ UDSCharacterStatComponent::UDSCharacterStatComponent()
 	Attack = 10.f;
 	Defence = 10.f;
 
-	SetIsReplicated(true);
+	SetIsReplicatedByDefault(true);
+	//SetIsReplicated(true);
 }
 
 

@@ -14,4 +14,30 @@ class PROJECTDSFRAMEWORK_API UDSWeaponActionAttack : public UDSWeaponAction
 {
 	GENERATED_BODY()
 	
+public:
+	UDSWeaponActionAttack();
+
+public:
+	virtual void TickAction(float DeltaTime) override;
+	virtual void DoAction() override;
+	virtual void StopAction() override;
+	virtual bool ShouldTickAction() override;
+
+private:
+	void InternalHitCheck(float DeltaTime);
+
+protected:
+	UPROPERTY(EditAnywhere)
+	FName HitCheckStartSocketName;
+
+	UPROPERTY(EditAnywhere)
+	FName HitCheckEndtSocketName;
+
+	UPROPERTY(EditAnywhere)
+	float CheckInterval;
+
+private:
+	bool bNeedHitCheck;
+	float ElapsedTickTime;
+
 };
