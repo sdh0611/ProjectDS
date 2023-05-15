@@ -6,7 +6,7 @@
 #include "DSBaseTypes.generated.h"
 
 UENUM()
-enum class EAttackInputType : uint8
+enum class EWeaponActionInput : uint8
 {
 	Attack = 0,
 	AttackRelease,
@@ -45,4 +45,22 @@ public:
 	float GetDamage() const { return Damage; }
 };
 
+USTRUCT()
+struct FDSWeaponAnimData
+{
+	GENERATED_USTRUCT_BODY()
 
+public:
+	UPROPERTY(EditDefaultsOnly)
+		UAnimMontage* WeaponAnim;
+
+	UPROPERTY(EditDefaultsOnly)
+		float PlayRate;
+
+	FDSWeaponAnimData()
+		: WeaponAnim(nullptr)
+		, PlayRate(1.f)
+	{
+	}
+
+};

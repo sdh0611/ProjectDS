@@ -24,9 +24,9 @@ void ADSMeleeWeapon::InternalUpdateWeapon(float DeltaTime)
 
 }
 
-bool ADSMeleeWeapon::CanHandleAttackInput(EAttackInputType TryAttackType) const
+bool ADSMeleeWeapon::CanHandleWeaponActionInput(EWeaponActionInput TryAttackType) const
 {
-	const bool bCanAttack = Super::CanHandleAttackInput(TryAttackType) && IsWeaponArmed();
+	const bool bCanAttack = Super::CanHandleWeaponActionInput(TryAttackType) && IsWeaponArmed();
 
 	return bCanAttack;
 }
@@ -37,22 +37,22 @@ void ADSMeleeWeapon::InternalEquipped()
 
 }
 
-void ADSMeleeWeapon::HandleAttackInput(EAttackInputType InAttackInputType)
+void ADSMeleeWeapon::HandleWeaponActionInput(EWeaponActionInput InWeaponActionInput)
 {
-	Super::HandleAttackInput(InAttackInputType);
+	Super::HandleWeaponActionInput(InWeaponActionInput);
 
 	EAttackType TryAttackType = EAttackType::None;
 
-	switch (InAttackInputType)
+	switch (InWeaponActionInput)
 	{
-	case EAttackInputType::Attack:
-	case EAttackInputType::ChargedAttack:
-		TryAttack(InAttackInputType);
+	case EWeaponActionInput::Attack:
+	case EWeaponActionInput::ChargedAttack:
+		TryAttack(InWeaponActionInput);
 		break;
-	case EAttackInputType::AltAttack:
+	case EWeaponActionInput::AltAttack:
 		DoGuard();
 		break;
-	case EAttackInputType::WeaponSkill:
+	case EWeaponActionInput::WeaponSkill:
 		DoWeaponSkill();
 		break;
 	}
@@ -77,17 +77,17 @@ void ADSMeleeWeapon::InternalUnequipped()
 
 }
 
-void ADSMeleeWeapon::TryAttack(EAttackInputType InAttackInput)
+void ADSMeleeWeapon::TryAttack(EWeaponActionInput InAttackInput)
 {
 	// Determine try attack type
 	EAttackType TryAttackType = EAttackType::None;
 
 	switch (InAttackInput)
 	{
-	case EAttackInputType::Attack:
+	case EWeaponActionInput::Attack:
 		TryAttackType = EAttackType::Attack;
 		break;
-	case EAttackInputType::ChargedAttack:
+	case EWeaponActionInput::ChargedAttack:
 		TryAttackType = EAttackType::ChargedAttack;
 		break;
 	default:

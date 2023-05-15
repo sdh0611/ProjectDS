@@ -36,6 +36,12 @@ protected:
 	UPROPERTY(EditAnywhere)
 	float CheckInterval;
 
+	UPROPERTY(EditAnywhere)
+	FDSWeaponAnimData AttackAnim;
+
+	UPROPERTY(EditAnywhere, Meta=(ClampMin=0.0))
+	float DamageMultiplier;
+
 private:
 	bool bNeedHitCheck;
 	float ElapsedTickTime;

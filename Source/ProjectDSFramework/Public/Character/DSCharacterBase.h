@@ -158,7 +158,7 @@ protected:
 // ~ End player input binds
 
 private:
-	void TryAttack(EAttackInputType AttackType);
+	void TryAttack(EWeaponActionInput AttackType);
 
 public:
 	virtual void EquipWeapon(ADSWeapon* Equipped);
@@ -197,7 +197,7 @@ protected:
 	void ServerToggleWeapon();
 
 	UFUNCTION(Server, Reliable, WithValidation)
-	void ServerTryAttack(EAttackInputType AttackType);
+	void ServerTryAttack(EWeaponActionInput AttackType);
 
 	UFUNCTION(Server, Reliable, WithValidation)
 	void ServerLockOnTarget(bool bLockOn);

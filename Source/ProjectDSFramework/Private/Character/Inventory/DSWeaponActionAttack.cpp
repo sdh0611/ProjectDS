@@ -6,6 +6,7 @@
 
 UDSWeaponActionAttack::UDSWeaponActionAttack()
 {
+    DamageMultiplier = 1.f;
     bNeedHitCheck = false;
     ElapsedTickTime = 0.f;
 }

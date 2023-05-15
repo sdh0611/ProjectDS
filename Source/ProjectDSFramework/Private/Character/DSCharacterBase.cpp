@@ -326,29 +326,29 @@ void ADSCharacterBase::ToggleWeapon()
 
 void ADSCharacterBase::Attack()
 {
-	TryAttack(EAttackInputType::Attack);
+	TryAttack(EWeaponActionInput::Attack);
 }
 
 void ADSCharacterBase::AltAttackPressed()
 {
-	TryAttack(EAttackInputType::AltAttack);
+	TryAttack(EWeaponActionInput::AltAttack);
 }
 
 void ADSCharacterBase::AltAttackReleased()
 {
-	TryAttack(EAttackInputType::AltAttackRelease);
+	TryAttack(EWeaponActionInput::AltAttackRelease);
 }
 
-void ADSCharacterBase::TryAttack(EAttackInputType AttackType)
+void ADSCharacterBase::TryAttack(EWeaponActionInput AttackType)
 {
 	// Contain autonomous proxy, authority
 	if (GetLocalRole() > ROLE_SimulatedProxy)
 	{
 		if (IsMoveInputAllowed(EActiveInputFlag::InputAttack))
 		{
-			if (IsValid(CurrentWeapon) && CurrentWeapon->CanHandleAttackInput(AttackType))
+			if (IsValid(CurrentWeapon) && CurrentWeapon->CanHandleWeaponActionInput(AttackType))
 			{
-				CurrentWeapon->HandleAttackInput(AttackType);
+				CurrentWeapon->HandleWeaponActionInput(AttackType);
 				if (IsNetMode(NM_Client))
 				{
 					ServerTryAttack(AttackType);
@@ -826,12 +826,12 @@ void ADSCharacterBase::ServerToggleWeapon_Implementation()
 	}
 }
 
-bool ADSCharacterBase::ServerTryAttack_Validate(EAttackInputType AttackType)
+bool ADSCharacterBase::ServerTryAttack_Validate(EWeaponActionInput AttackType)
 {
 	return true;
 }
 
-void ADSCharacterBase::ServerTryAttack_Implementation(EAttackInputType AttackType)
+void ADSCharacterBase::ServerTryAttack_Implementation(EWeaponActionInput AttackType)
 {
 	TryAttack(AttackType);
 }

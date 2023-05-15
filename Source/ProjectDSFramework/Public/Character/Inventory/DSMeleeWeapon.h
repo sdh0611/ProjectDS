@@ -48,8 +48,8 @@ protected:
 	virtual void InternalUpdateWeapon(float DeltaTime) override;
 
 public:
-	virtual bool CanHandleAttackInput(EAttackInputType InAttackInputType) const override;
-	virtual void HandleAttackInput(EAttackInputType InAttackInputType) override;
+	virtual bool CanHandleWeaponActionInput(EWeaponActionInput InWeaponActionInput) const override;
+	virtual void HandleWeaponActionInput(EWeaponActionInput InWeaponActionInput) override;
 
 	// ~ Begin AActor Interface
 	/** Returns the properties used for network replication, this needs to be overridden by all actor classes with native replicated properties */
@@ -61,7 +61,7 @@ public:
 protected:
 	virtual void InternalEquipped() override;
 	virtual void InternalUnequipped() override;
-	void TryAttack(EAttackInputType InAttackInput);
+	void TryAttack(EWeaponActionInput InAttackInput);
 	void DoAttack();
 	void DoGuard();
 	void DoWeaponSkill();

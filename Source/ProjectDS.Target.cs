@@ -10,6 +10,6 @@ public class ProjectDSTarget : TargetRules
 		Type = TargetType.Game;
 		DefaultBuildSettings = BuildSettingsVersion.V2;
 
-		ExtraModuleNames.AddRange( new string[] { "ProjectDS", "ProjectDSFramework", "ProjectDSUI" } );
+		ExtraModuleNames.AddRange( new string[] { "ProjectDS", "ProjectDSFramework" } );
 	}
 }

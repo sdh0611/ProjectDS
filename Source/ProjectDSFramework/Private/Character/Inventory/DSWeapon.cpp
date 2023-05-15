@@ -76,8 +76,13 @@ void ADSWeapon::Tick(float DeltaTime)
 	}
 
 }
-void ADSWeapon::HandleAttackInput(EAttackInputType InAttackInputType)
+void ADSWeapon::HandleWeaponActionInput(EWeaponActionInput InWeaponActionInput)
 {
+	UDSWeaponAction* WeaponAction = GetWeaponAction(InWeaponActionInput);
+	if (WeaponAction)
+	{
+		WeaponAction->DoAction();
+	}
 
 }
 
@@ -132,6 +137,18 @@ void ADSWeapon::SetWeaponArmed(bool bIsArmed)
 	}
 }
 
+UDSWeaponAction* ADSWeapon::GetWeaponAction(EWeaponActionInput InInputType) const
+{
+	for (const FDSWeaponActionData& WeaponActionData : WeaponActions)
+	{
+		if (WeaponActionData.WeaponActionInput == InInputType)
+		{
+			return WeaponActionData.WeaponAction;
+		}
+	}
+
+	return nullptr;
+}
 
 void ADSWeapon::OnRep_WeaponArmed()
 {

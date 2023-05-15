@@ -21,6 +21,7 @@ public class ProjectDSFramework : ModuleRules
                 "ProjectDSFramework/Public/Character/Inventory",
                 "ProjectDSFramework/Public/Game",
                 "ProjectDSFramework/Public/Player",
+                "ProjectDSFramework/Public/UI",
             }
         );
 

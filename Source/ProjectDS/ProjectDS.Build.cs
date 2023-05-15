@@ -10,7 +10,7 @@ public class ProjectDS : ModuleRules
 	
 		PublicDependencyModuleNames.AddRange(new string[] { "Core", "CoreUObject", "Engine", "InputCore" });
 
-		PrivateDependencyModuleNames.AddRange(new string[] { "ProjectDSFramework", "ProjectDSUI" });
+		PrivateDependencyModuleNames.AddRange(new string[] { "ProjectDSFramework" });
 
         PublicIncludePaths.AddRange(
             new string[]
@@ -26,7 +26,6 @@ public class ProjectDS : ModuleRules
                         "ProjectDSFramework/Public/Character/Inventory",
                         "ProjectDSFramework/Public/Game",
                         "ProjectDSFramework/Public/Player",
-                        "ProjectDSUI/Public"
             }
         );
 

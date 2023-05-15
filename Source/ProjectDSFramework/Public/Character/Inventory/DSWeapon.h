@@ -11,26 +11,6 @@
 class UAnimMontage;
 class UDSWeaponAction;
 
-USTRUCT()
-struct FDSWeaponAnimData
-{
-	GENERATED_USTRUCT_BODY()
-
-public:
-	UPROPERTY(EditDefaultsOnly)
-	UAnimMontage* WeaponAnim;
-	
-	UPROPERTY(EditDefaultsOnly)
-	float PlayRate;
-
-	FDSWeaponAnimData()
-		: WeaponAnim(nullptr)
-		, PlayRate(1.f)
-	{
-	}
-
-};
-
 
 USTRUCT()
 struct FDSWeaponActionData
@@ -38,7 +18,7 @@ struct FDSWeaponActionData
 	GENERATED_USTRUCT_BODY()
 
 	UPROPERTY(EditDefaultsOnly)
-	EAttackInputType AttackInputType;
+	EWeaponActionInput WeaponActionInput;
 
 	UPROPERTY(EditDefaultsOnly, Instanced, Category = "WeaponAction")
 	UDSWeaponAction* WeaponAction;
@@ -73,8 +53,8 @@ public:
 	virtual void Tick(float DeltaTime) override;
 
 public:
-	virtual bool CanHandleAttackInput(EAttackInputType InAttackInputType) const { return IsEquipped(); }
-	virtual void HandleAttackInput(EAttackInputType InAttackInputType);
+	virtual bool CanHandleWeaponActionInput(EWeaponActionInput InWeaponActionInput) const { return IsEquipped(); }
+	virtual void HandleWeaponActionInput(EWeaponActionInput InWeaponActionInput);
 
 protected:
 	virtual void InternalUpdateWeapon(float DeltaTime);
@@ -88,7 +68,7 @@ public:
 public:
 	void SetWeaponArmed(bool bIsArmed);
 	bool IsWeaponArmed() const { return bWeaponArmed; }
-
+	UDSWeaponAction* GetWeaponAction(EWeaponActionInput InInputType) const;
 
 protected:
 	UFUNCTION()
