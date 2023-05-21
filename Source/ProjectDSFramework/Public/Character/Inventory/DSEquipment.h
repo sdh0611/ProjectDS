@@ -62,6 +62,10 @@ public:
 	FName AttachSocketName;
 
 protected:
+	// NOTE(23. 5.21)
+	//		현재는 모든 장비가 Static Mesh를 쓴다고 가정하고 작업해놨지만,
+	//		나중에 장비에 Animation이 들어가게 되어 Skeletal Mesh를 쓰게될 경우 곤란해짐.
+	//		Static Mesh, Skeletal Mesh에 공동으로 대응할 수 있는 방안을 고민해보자.
 	UPROPERTY(VisibleDefaultsOnly)
 	TObjectPtr<UStaticMeshComponent> BodyMesh;
 
