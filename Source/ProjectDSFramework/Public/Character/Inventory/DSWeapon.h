@@ -4,57 +4,26 @@
 
 #include "CoreMinimal.h"
 #include "Character/Inventory/DSEquipment.h"
+#include "DSBaseTypes.h"
+#include "DSWeaponAction.h"
 #include "DSWeapon.generated.h"
 
 class UAnimMontage;
+class UDSWeaponAction;
 
-USTRUCT(BlueprintType)
-struct FWeaponAnimInfo
-{
-	GENERATED_USTRUCT_BODY()
-
-public:
-	UPROPERTY(EditAnywhere)
-	FName AnimName;
-
-	UPROPERTY(EditAnywhere)
-	class UAnimMontage* SlotAnim;
-
-	UPROPERTY(EditAnywhere)
-	float PlayRate;
-
-	FWeaponAnimInfo()
-		: AnimName(NAME_None)
-		, SlotAnim(nullptr)
-		, PlayRate(1.f)
-	{
-	}
-};
 
 USTRUCT()
-struct FAttackSequenceReplicateData
+struct FDSWeaponActionData
 {
 	GENERATED_USTRUCT_BODY()
 
-	UPROPERTY()
-	int8 SequenceIndex;
+	UPROPERTY(EditDefaultsOnly)
+	EWeaponActionInput WeaponActionInput;
 
-	UPROPERTY()
-	uint8 AttackType;
-
-	FAttackSequenceReplicateData()
-		: SequenceIndex(INDEX_NONE)
-		, AttackType(0)
-	{
-	}
-
-	FAttackSequenceReplicateData(int8 NewSequenceIndex, uint8 NewAttackType)
-		: SequenceIndex(NewSequenceIndex)
-		, AttackType(NewAttackType)
-	{
-	}
-
+	UPROPERTY(EditDefaultsOnly, Instanced, Category = "WeaponAction")
+	TObjectPtr<UDSWeaponAction> WeaponAction;
 };
+
 
 /**
  * 
@@ -84,27 +53,22 @@ public:
 	virtual void Tick(float DeltaTime) override;
 
 public:
-	virtual bool CanAttack() const { return IsEquipped(); }
-	virtual bool ShouldResolvePendingAttack() const;
-	virtual void TryAttack(uint8 TryAttackType = 1);
+	virtual bool CanHandleWeaponActionInput(EWeaponActionInput InWeaponActionInput) const { return IsEquipped(); }
+	virtual void HandleWeaponActionInput(EWeaponActionInput InWeaponActionInput);
 
 protected:
-	virtual bool DoAttack() { return false; }
 	virtual void InternalUpdateWeapon(float DeltaTime);
 	virtual void InternalEquipped() override;
 	virtual void InternalUnequipped() override;
-	void UpdatePendingAttack();
-	void CheckExpiredPendingAttack();
 
 public:
 	void WeaponArmed();
 	void WeaponUnarmed(bool bPlayAnim = true);
-	virtual void OnAttackEnd() {};
 
 public:
 	void SetWeaponArmed(bool bIsArmed);
 	bool IsWeaponArmed() const { return bWeaponArmed; }
-
+	UDSWeaponAction* GetWeaponAction(EWeaponActionInput InInputType) const;
 
 protected:
 	UFUNCTION()
@@ -116,25 +80,15 @@ public:
 
 protected:
 	UPROPERTY(EditDefaultsOnly, Category = Anim)
-	UAnimMontage* EquipAnim;
+	TObjectPtr<UAnimMontage> EquipAnim;
 
 	UPROPERTY(EditDefaultsOnly, Category = Anim)
-	UAnimMontage* UnequipAnim;
+	TObjectPtr<UAnimMontage> UnequipAnim;
+
+	UPROPERTY(EditDefaultsOnly, Category = "WeaponAction")
+	TArray<FDSWeaponActionData> WeaponActions;
 
 protected:
 	UPROPERTY(Transient, ReplicatedUsing=OnRep_WeaponArmed)
 	uint8 bWeaponArmed: 1;
-
-	UPROPERTY(Transient)
-	int32 CurrentCombo = 0;
-
-	// For simulated proxy
-	// TODO : Attack type 정의 ex) 강공격, 약공격, 대쉬 공격 등
-	UPROPERTY(Transient, Replicated)
-	TArray<FAttackSequenceReplicateData> PendingAttack;
-
-	//UPROPERTY(Transient, Replicated)
-	//TArray<uint8> PendingAttack;
-
-
 };

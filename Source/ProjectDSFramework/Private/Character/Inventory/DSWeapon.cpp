@@ -16,14 +16,22 @@ ADSWeapon::ADSWeapon()
 
 	AttachSocketName = TEXT("weapon_r");
 	AttachSocketNameOnDeactivated = TEXT("weapon_unequipped");
-
-	CurrentCombo = INDEX_NONE;
 }
 
 void ADSWeapon::BeginPlay()
 {
 	Super::BeginPlay();
 
+	if (WeaponActions.Num() > 0)
+	{
+		for (FDSWeaponActionData& InWeaponAction : WeaponActions)
+		{
+			if (InWeaponAction.WeaponAction)
+			{
+				InWeaponAction.WeaponAction->SetOwnerWeapon(this);
+			}
+		}
+	}
 }
 
 void ADSWeapon::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -31,7 +39,6 @@ void ADSWeapon::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetim
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 	
 	DOREPLIFETIME(ADSWeapon, bWeaponArmed);
-	DOREPLIFETIME_CONDITION(ADSWeapon, PendingAttack, COND_SkipOwner);
 }
 
 void ADSWeapon::PreReplication(IRepChangedPropertyTracker & ChangedPropertyTracker)
@@ -45,7 +52,6 @@ void ADSWeapon::PostNetReceive()
 {
 	Super::PostNetReceive();
 
-	//CheckExpiredPendingAttack();
 }
 
 void ADSWeapon::Tick(float DeltaTime)
@@ -57,39 +63,32 @@ void ADSWeapon::Tick(float DeltaTime)
 		InternalUpdateWeapon(DeltaTime);
 	}
 
-	if (ShouldResolvePendingAttack())
+	if (WeaponActions.Num() > 0)
 	{
-		UpdatePendingAttack();
-	}
-}
-
-bool ADSWeapon::ShouldResolvePendingAttack() const
-{
-	bool bNeedResolve = false;
-	if (OwnerCharacter.IsValid())
-	{
-		bNeedResolve = (OwnerCharacter->GetLocalRole() == ROLE_SimulatedProxy) && PendingAttack.Num() > 0 && CurrentCombo < PendingAttack.Last().SequenceIndex;
-	}
-
-	return bNeedResolve;
-}
-
-void ADSWeapon::TryAttack(uint8 TryAttackType)
-{
-	if (DoAttack())
-	{
-		if (HasAuthority())
+		for (FDSWeaponActionData& InWeaponAction : WeaponActions)
 		{
-			UE_LOG(LogClass, Warning, TEXT("[WeaponDebugLog] Add pending attack !!"));
-			//PendingAttack.Add(1);
-			PendingAttack.Add(FAttackSequenceReplicateData(CurrentCombo, TryAttackType));
-			ForceNetUpdate();
+			if (InWeaponAction.WeaponAction && InWeaponAction.WeaponAction->ShouldTickAction())
+			{
+				InWeaponAction.WeaponAction->TickAction(DeltaTime);
+			}
 		}
+
 	}
+
+}
+void ADSWeapon::HandleWeaponActionInput(EWeaponActionInput InWeaponActionInput)
+{
+	UDSWeaponAction* WeaponAction = GetWeaponAction(InWeaponActionInput);
+	if (WeaponAction)
+	{
+		WeaponAction->DoAction();
+	}
+
 }
 
 void ADSWeapon::InternalUpdateWeapon(float DeltaTime)
 {
+
 }
 
 void ADSWeapon::InternalEquipped()
@@ -107,36 +106,9 @@ void ADSWeapon::InternalUnequipped()
 
 }
 
-void ADSWeapon::UpdatePendingAttack()
-{
-	if (PendingAttack.Num() > 0)
-	{
-		if (DoAttack())
-		{
-			UE_LOG(LogClass, Warning, TEXT("[WeaponDebugLog] Resolve pending attack on %s!!"), HasAuthority() ? TEXT("Authority") : TEXT("Simulated"));
-			//PendingAttack.RemoveAtSwap(0);
-		}
-	}
-}
-
-void ADSWeapon::CheckExpiredPendingAttack()
-{
-	TWeakObjectPtr<ADSWeapon> WeakThis(this);
-	PendingAttack.RemoveAllSwap([WeakThis](const FAttackSequenceReplicateData& NewData) -> bool {
-
-		ADSWeapon* Self = WeakThis.Get();
-		if (IsValid(Self))
-		{
-			return NewData.SequenceIndex <= Self->CurrentCombo;
-		}
-
-		return false;
-		}, true);
-}
-
 void ADSWeapon::WeaponArmed()
 {
-	if (OwnerCharacter.IsValid() && OwnerCharacter->GetMesh())
+	if (IsValid(OwnerCharacter) && OwnerCharacter->GetMesh())
 	{
 		if (EquipAnim)
 		{
@@ -147,7 +119,7 @@ void ADSWeapon::WeaponArmed()
 
 void ADSWeapon::WeaponUnarmed(bool bPlayAnim)
 {
-	if (OwnerCharacter.IsValid() && OwnerCharacter->GetMesh())
+	if (IsValid(OwnerCharacter) && OwnerCharacter->GetMesh())
 	{
 		if (bPlayAnim && UnequipAnim)
 		{
@@ -165,6 +137,18 @@ void ADSWeapon::SetWeaponArmed(bool bIsArmed)
 	}
 }
 
+UDSWeaponAction* ADSWeapon::GetWeaponAction(EWeaponActionInput InInputType) const
+{
+	for (const FDSWeaponActionData& WeaponActionData : WeaponActions)
+	{
+		if (WeaponActionData.WeaponActionInput == InInputType)
+		{
+			return WeaponActionData.WeaponAction;
+		}
+	}
+
+	return nullptr;
+}
 
 void ADSWeapon::OnRep_WeaponArmed()
 {

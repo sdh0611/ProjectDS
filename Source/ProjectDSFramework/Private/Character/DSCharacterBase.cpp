@@ -13,6 +13,9 @@
 #include "Net/UnrealNetwork.h"
 #include "DSCharacterStatComponent.h"
 #include "DrawDebugHelpers.h"
+#include "EnhancedInputComponent.h"
+#include "Input/DSInputSetting.h"
+#include "DSGameplayStatics.h"
 
 const FName ADSCharacterBase::SpringArmComponentName = TEXT("SpringArm");
 const FName ADSCharacterBase::CameraComponentName = TEXT("Camera");
@@ -106,28 +109,15 @@ void ADSCharacterBase::Tick(float DeltaTime)
 // Called to bind functionality to input
 void ADSCharacterBase::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 {
+	check(PlayerInputComponent);
+
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
 
-	if (IsValid(PlayerInputComponent))
+	if (UEnhancedInputComponent* EnhancedInputComponent = Cast<UEnhancedInputComponent>(PlayerInputComponent))
 	{
-		PlayerInputComponent->BindAxis(TEXT("MoveForward"), this, &ADSCharacterBase::MoveForward);
-		PlayerInputComponent->BindAxis(TEXT("MoveRight"), this, &ADSCharacterBase::MoveRight);
-		PlayerInputComponent->BindAxis(TEXT("Turn"), this, &ADSCharacterBase::Turn);
-		PlayerInputComponent->BindAxis(TEXT("LookUp"), this, &ADSCharacterBase::LookUp);
-
-		PlayerInputComponent->BindAction(TEXT("Jump"), EInputEvent::IE_Pressed, this, &ADSCharacterBase::StartJump);
-		PlayerInputComponent->BindAction(TEXT("Jump"), EInputEvent::IE_Released, this, &ADSCharacterBase::EndJump);
-		PlayerInputComponent->BindAction(TEXT("Crouch"), EInputEvent::IE_Pressed, this, &ADSCharacterBase::ToggleCrouch);
-		PlayerInputComponent->BindAction(TEXT("ToggleWeapon"), EInputEvent::IE_Pressed, this, &ADSCharacterBase::ToggleWeapon);
-		PlayerInputComponent->BindAction(TEXT("Attack"), EInputEvent::IE_Pressed, this, &ADSCharacterBase::Attack);
-		PlayerInputComponent->BindAction<FActionInputDelegate>(TEXT("Sprint"), EInputEvent::IE_Pressed, this, &ADSCharacterBase::Sprint, true);
-		PlayerInputComponent->BindAction<FActionInputDelegate>(TEXT("Sprint"), EInputEvent::IE_Released, this, &ADSCharacterBase::Sprint, false);
-		PlayerInputComponent->BindAction<FActionInputDelegate>(TEXT("Walk"), EInputEvent::IE_Pressed, this, &ADSCharacterBase::Walk, true);
-		PlayerInputComponent->BindAction<FActionInputDelegate>(TEXT("Walk"), EInputEvent::IE_Released, this, &ADSCharacterBase::Walk, false);
-		PlayerInputComponent->BindAction<FActionInputDelegate>(TEXT("Guard"), EInputEvent::IE_Pressed, this, &ADSCharacterBase::Guard, true);
-		PlayerInputComponent->BindAction<FActionInputDelegate>(TEXT("Guard"), EInputEvent::IE_Released, this, &ADSCharacterBase::Guard, false);
+		ApplyCharacterInputMappingContext();
+		BindInputAction(EnhancedInputComponent);
 	}
-
 }
 
 void ADSCharacterBase::Falling()
@@ -208,71 +198,89 @@ void ADSCharacterBase::DeactiveRagdoll()
 	}
 }
 
-void ADSCharacterBase::MoveForward(float Value)
+void ADSCharacterBase::ApplyCharacterInputMappingContext()
 {
-	if (IsMoveInputAllowed(EActiveInputFlag::InputMoveForward))
+	if (IsValid(CharacterInputSetting) && CharacterInputSetting->GetInputMappingContextSet().IsValidSet())
 	{
-		if (Controller && Value != 0.f)
+		// Enhanced input system
+		ADSPlayerControllerBase* DSPC = GetController<ADSPlayerControllerBase>();
+		if (IsValid(DSPC))
 		{
-			const FRotator Yaw(0.f, Controller->GetControlRotation().Yaw, 0.f);
-			const FVector Dir = FRotationMatrix(Yaw).GetUnitAxis(EAxis::X);
-			AddMovementInput(Dir * Value);
+			DSPC->ApplyInputMappingContext(CharacterInputSetting->GetInputMappingContextSet().InputMappingContext, CharacterInputSetting->GetInputMappingContextSet().Priority);
 		}
 	}
 }
 
-void ADSCharacterBase::MoveRight(float Value)
+void ADSCharacterBase::BindInputAction(UEnhancedInputComponent* InInputComponent)
 {
-	if (IsMoveInputAllowed(EActiveInputFlag::InputMoveRight))
+	if (InInputComponent && IsValid(CharacterInputSetting))
 	{
-		if (Controller && Value != 0.f)
+#define BIND_CHARACTER_ACTION_INPUT(InputFunctionName, TriggerEvent)	\
+			static const FName InputFunctionName##InputName = FName(TEXT(#InputFunctionName));	\
+			if (UInputAction* TargetInputAction = CharacterInputSetting->GetInputAction(InputFunctionName##InputName))	\
+			{\
+				InInputComponent->BindAction(TargetInputAction, TriggerEvent, this, &ADSCharacterBase::InputFunctionName);\
+			}
+
+		BIND_CHARACTER_ACTION_INPUT(Movement, ETriggerEvent::Triggered)
+		BIND_CHARACTER_ACTION_INPUT(TurnAndLookUp, ETriggerEvent::Triggered)
+		BIND_CHARACTER_ACTION_INPUT(Jump, ETriggerEvent::Triggered)
+		BIND_CHARACTER_ACTION_INPUT(Sprint, ETriggerEvent::Triggered)
+		BIND_CHARACTER_ACTION_INPUT(Walk, ETriggerEvent::Triggered)
+		BIND_CHARACTER_ACTION_INPUT(ToggleCrouch, ETriggerEvent::Triggered)
+		BIND_CHARACTER_ACTION_INPUT(Attack, ETriggerEvent::Triggered)
+		BIND_CHARACTER_ACTION_INPUT(AltAttack, ETriggerEvent::Triggered)
+		BIND_CHARACTER_ACTION_INPUT(ToggleWeapon, ETriggerEvent::Triggered)
+
+#undef BIND_CHARACTER_ACTION_INPUT
+	}
+
+}
+
+void ADSCharacterBase::Movement(const FInputActionValue& InActionValue)
+{
+	if (IsValid(Controller))
+	{
+		const FVector2D InputValue = InActionValue.Get<FVector2D>();
+		const FRotator ControlYawRot(0.f, GetControlRotation().Yaw, 0.f);
+		if (IsMoveInputAllowed(EActiveInputFlag::InputMoveForward) && InputValue.Y != 0.f)
 		{
-			const FRotator Yaw(0.f, Controller->GetControlRotation().Yaw, 0.f);
-			const FVector Dir = FRotationMatrix(Yaw).GetUnitAxis(EAxis::Y);
-			AddMovementInput(Dir * Value);
+			AddMovementInput(ControlYawRot.RotateVector(FVector::ForwardVector), InputValue.Y);
+		}
+
+		if (IsMoveInputAllowed(EActiveInputFlag::InputMoveRight) && InputValue.X != 0.f)
+		{
+			AddMovementInput(ControlYawRot.RotateVector(FVector::RightVector), InputValue.X);
 		}
 	}
 }
 
-void ADSCharacterBase::Turn(float Value)
+void ADSCharacterBase::TurnAndLookUp(const FInputActionValue& InActionValue)
 {
-	if (IsMoveInputAllowed(EActiveInputFlag::InputTurn))
+	const FVector2D InputValue = InActionValue.Get<FVector2D>();
+	if (IsMoveInputAllowed(EActiveInputFlag::InputTurn) && InputValue.X != 0.f)
 	{
-		AddControllerYawInput(Value);
+		AddControllerYawInput(InputValue.X);
+	}
+
+	if (IsMoveInputAllowed(EActiveInputFlag::InputLookUp) && InputValue.Y != 0.f)
+	{
+		AddControllerPitchInput(InputValue.Y);
 	}
 }
 
-void ADSCharacterBase::LookUp(float Value)
+void ADSCharacterBase::Sprint(const FInputActionValue& InActionValue)
 {
-	if (IsMoveInputAllowed(EActiveInputFlag::InputLookUp))
-	{
-		AddControllerPitchInput(Value);
-	}
-}
+	const bool bPressed = InActionValue.Get<bool>();
 
-void ADSCharacterBase::StartJump()
-{
-	if (IsMoveInputAllowed(EActiveInputFlag::InputJump) && !bPressedJump)
+	if (IsMoveInputAllowed(EActiveInputFlag::InputSprint) || !bPressed)
 	{
-		Jump();
-	}
-}
-
-void ADSCharacterBase::EndJump()
-{
-	StopJumping();
-}
-
-void ADSCharacterBase::Sprint(bool bSprint)
-{
-	if (IsMoveInputAllowed(EActiveInputFlag::InputSprint) || !bSprint)
-	{
-		SetSprinting(bSprint);
+		SetSprinting(bPressed);
 		if (IsNetMode(NM_Client))
 		{
 			if (IsValid(SpringArm))
 			{
-				if (bSprint)
+				if (bPressed)
 				{
 					SpringArm->CameraLagMaxDistance += 100.f;
 				}
@@ -285,28 +293,45 @@ void ADSCharacterBase::Sprint(bool bSprint)
 	}
 }
 
-void ADSCharacterBase::Walk(bool bWalk)
+void ADSCharacterBase::Walk(const FInputActionValue& InActionValue)
 {
-	if (IsMoveInputAllowed(EActiveInputFlag::InputWalk) || !bWalk)
+	const bool bPressed = InActionValue.Get<bool>();
+	if (IsMoveInputAllowed(EActiveInputFlag::InputWalk) || !bPressed)
 	{
-		SetWalking(bWalk);
+		SetWalking(bPressed);
 	}
 }
 
-void ADSCharacterBase::ToggleCrouch()
+void ADSCharacterBase::ToggleCrouch(const FInputActionValue& InActionValue)
 {
-	if (!bIsCrouched)
+	const bool bPressed = InActionValue.Get<bool>();
+	if (bPressed)
 	{
-		Sprint(false);
-		Crouch();
-	}
-	else
-	{
-		UnCrouch();
+		if (!bIsCrouched)
+		{
+			Sprint(false);
+			Crouch();
+		}
+		else
+		{
+			UnCrouch();
+		}
 	}
 }
 
-void ADSCharacterBase::ToggleWeapon()
+void ADSCharacterBase::DoJump(const FInputActionValue& InActionValue)
+{
+	if (IsMoveInputAllowed(EActiveInputFlag::InputJump))
+	{
+		const bool bPressed = InActionValue.Get<bool>();
+		if (bPressed)
+		{
+			Jump();
+		}
+	}
+}
+
+void ADSCharacterBase::ToggleWeapon(const FInputActionValue& InActionValue)
 {
 	if (IsMoveInputAllowed(EActiveInputFlag::InputEquipWeapon))
 	{
@@ -324,28 +349,41 @@ void ADSCharacterBase::ToggleWeapon()
 	}
 }
 
-void ADSCharacterBase::Attack()
+void ADSCharacterBase::Attack(const FInputActionValue& InActionValue)
+{
+	TryAttack(EWeaponActionInput::Attack);
+}
+
+void ADSCharacterBase::AltAttack(const FInputActionValue& InActionValue)
+{
+	const bool bPressed = InActionValue.Get<bool>();
+	if (bPressed)
+	{
+		TryAttack(EWeaponActionInput::AltAttack);
+	}
+	else
+	{
+		TryAttack(EWeaponActionInput::AltAttackRelease);
+	}
+}
+
+void ADSCharacterBase::TryAttack(EWeaponActionInput AttackType)
 {
 	// Contain autonomous proxy, authority
 	if (GetLocalRole() > ROLE_SimulatedProxy)
 	{
 		if (IsMoveInputAllowed(EActiveInputFlag::InputAttack))
 		{
-			if (IsValid(CurrentWeapon) && CurrentWeapon->CanAttack())
+			if (IsValid(CurrentWeapon) && CurrentWeapon->CanHandleWeaponActionInput(AttackType))
 			{
-				CurrentWeapon->TryAttack();
+				CurrentWeapon->HandleWeaponActionInput(AttackType);
 				if (IsNetMode(NM_Client))
 				{
-					ServerDoAttack();
+					ServerTryAttack(AttackType);
 				}
 			}
 		}
 	}
-}
-
-void ADSCharacterBase::Guard(bool bGuard)
-{
-
 
 }
 
@@ -816,12 +854,12 @@ void ADSCharacterBase::ServerToggleWeapon_Implementation()
 	}
 }
 
-bool ADSCharacterBase::ServerDoAttack_Validate()
+bool ADSCharacterBase::ServerTryAttack_Validate(EWeaponActionInput AttackType)
 {
 	return true;
 }
 
-void ADSCharacterBase::ServerDoAttack_Implementation()
+void ADSCharacterBase::ServerTryAttack_Implementation(EWeaponActionInput AttackType)
 {
-	Attack();
+	TryAttack(AttackType);
 }

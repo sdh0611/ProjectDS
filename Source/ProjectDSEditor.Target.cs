@@ -10,6 +10,6 @@ public class ProjectDSEditorTarget : TargetRules
 		Type = TargetType.Editor;
 		DefaultBuildSettings = BuildSettingsVersion.V2;
 
-		ExtraModuleNames.AddRange( new string[] { "ProjectDS", "ProjectDSFramework", "ProjectDSUI" } );
+		ExtraModuleNames.AddRange( new string[] { "ProjectDS", "ProjectDSFramework" } );
 	}
 }

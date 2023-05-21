@@ -25,11 +25,11 @@ void UDSAnimNotify_AttackHitCheck::BranchingPointNotify(FBranchingPointNotifyPay
 			{
 				if (bIsStartHitCheck)
 				{
-					Weapon->RequestHitCheckStart();
+					//Weapon->RequestHitCheckStart();
 				}
 				else
 				{
-					Weapon->RequestHitCheckEnd();
+					//Weapon->RequestHitCheckEnd();
 				}
 			}
 		}

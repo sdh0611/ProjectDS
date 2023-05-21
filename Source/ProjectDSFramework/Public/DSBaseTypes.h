@@ -5,6 +5,25 @@
 #include "CoreMinimal.h"
 #include "DSBaseTypes.generated.h"
 
+UENUM()
+enum class EWeaponActionInput : uint8
+{
+	Attack = 0,
+	AttackRelease,
+	AltAttack,
+	AltAttackRelease,
+	ChargedAttack,
+	WeaponSkill,
+};
+
+enum class EAttackType : uint8
+{
+	None = 0,
+	Attack,
+	ChargedAttack,
+	WeaponSkill,
+};
+
 USTRUCT()
 struct FTakeHitInfo
 {
@@ -26,4 +45,22 @@ public:
 	float GetDamage() const { return Damage; }
 };
 
+USTRUCT()
+struct FDSWeaponAnimData
+{
+	GENERATED_USTRUCT_BODY()
 
+public:
+	UPROPERTY(EditDefaultsOnly)
+	TObjectPtr<UAnimMontage> WeaponAnim;
+
+	UPROPERTY(EditDefaultsOnly)
+	float PlayRate;
+
+	FDSWeaponAnimData()
+		: WeaponAnim(nullptr)
+		, PlayRate(1.f)
+	{
+	}
+
+};

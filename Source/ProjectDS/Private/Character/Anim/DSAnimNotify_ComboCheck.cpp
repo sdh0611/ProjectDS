@@ -25,11 +25,11 @@ void UDSAnimNotify_ComboCheck::BranchingPointNotify(FBranchingPointNotifyPayload
 			{
 				if (bIsStartComboCheck)
 				{
-					Weapon->RequestComboCheckStart();
+					//Weapon->RequestComboCheckStart();
 				}
 				else
 				{
-					Weapon->RequestComboCheckEnd();
+					//Weapon->RequestComboCheckEnd();
 				}
 			}
 		}

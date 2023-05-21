@@ -10,7 +10,10 @@
 class UDSCharacterMovementComponent;
 class ADSWeapon;
 class ADSEquipment;
+class UDSInputSetting;
+class UEnhancedInputComponent;
 
+struct FInputActionValue;
 
 USTRUCT(BlueprintType)
 struct FDSCharacterHitReaction
@@ -139,22 +142,23 @@ protected:
 	void ActiveRagdoll();
 	void DeactiveRagdoll();
 
-// ~ Begin player input binds
 protected:
-	void MoveForward(float Value);
-	void MoveRight(float Value);
-	void Turn(float Value);
-	void LookUp(float Value);
+	void ApplyCharacterInputMappingContext();
+	void BindInputAction(UEnhancedInputComponent* InInputComponent);
+	// ~ Begin Enhanced input binds
+	void Movement(const FInputActionValue& InActionValue);
+	void TurnAndLookUp(const FInputActionValue& InActionValue);
+	void Sprint(const FInputActionValue& InActionValue);
+	void Walk(const FInputActionValue& InActionValue);
+	void ToggleCrouch(const FInputActionValue& InActionValue);
+	void DoJump(const FInputActionValue& InActionValue);
+	void ToggleWeapon(const FInputActionValue& InActionValue);
+	void Attack(const FInputActionValue& InActionValue);
+	void AltAttack(const FInputActionValue& InActionValue);
+	// ~ End Enhanced input binds
 
-	void StartJump();
-	void EndJump();
-	void Sprint(bool bSprint);
-	void Walk(bool bWalk);
-	void ToggleCrouch();
-	void ToggleWeapon();
-	void Attack();
-	void Guard(bool bGuard);
-// ~ End player input binds
+private:
+	void TryAttack(EWeaponActionInput AttackType);
 
 public:
 	virtual void EquipWeapon(ADSWeapon* Equipped);
@@ -193,7 +197,7 @@ protected:
 	void ServerToggleWeapon();
 
 	UFUNCTION(Server, Reliable, WithValidation)
-	void ServerDoAttack();
+	void ServerTryAttack(EWeaponActionInput AttackType);
 
 	UFUNCTION(Server, Reliable, WithValidation)
 	void ServerLockOnTarget(bool bLockOn);
@@ -215,7 +219,7 @@ private:
 // ~ Begin replicated properties
 protected:
 	UPROPERTY(VisibleAnywhere, Category=Inventory, Transient, ReplicatedUsing=OnRep_CurrentWeapon)
-	ADSWeapon* CurrentWeapon;
+	TObjectPtr<ADSWeapon> CurrentWeapon;
 
 	UPROPERTY(Transient, Replicated)
 	uint8 bTargeting : 1;
@@ -229,29 +233,30 @@ protected:
 
 	UPROPERTY(EditDefaultsOnly, ReplicatedUsing = OnRep_MaxHealth)
 	int32 MaxHealth;
-
 // ~ End replicated properties
 
 protected:
 	UPROPERTY()
-	class UDSCharacterAnimInstance* DSAnimInstance;
+	TObjectPtr<class UDSCharacterAnimInstance> DSAnimInstance;
 
 	UPROPERTY(VisibleAnywhere)
-	class USpringArmComponent* SpringArm;
+	TObjectPtr<class USpringArmComponent> SpringArm;
 
 	UPROPERTY(VisibleAnywhere)
-	class UCameraComponent* Camera;
+	TObjectPtr<class UCameraComponent> Camera;
 
 	UPROPERTY(VisibleAnywhere)
-	class UDSCharacterStatComponent* CharacterStat;
+	TObjectPtr<class UDSCharacterStatComponent> CharacterStat;
 
 	UPROPERTY(Transient)
-	class UDSCharacterMovementComponent* DSMovement;
+	TObjectPtr<class UDSCharacterMovementComponent> DSMovement;
 
 protected:
 	UPROPERTY(EditDefaultsOnly, Category = "Hit React")
 	TArray<FDSCharacterHitReaction> HitReactAnims;
 
+	UPROPERTY(EditDefaultsOnly, Category = "Input")
+	TObjectPtr<UDSInputSetting> CharacterInputSetting;
 
 public:
 	static const FName SpringArmComponentName;

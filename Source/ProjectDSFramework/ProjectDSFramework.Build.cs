@@ -8,7 +8,7 @@ public class ProjectDSFramework : ModuleRules
 	{
 		PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
 	
-		PublicDependencyModuleNames.AddRange(new string[] { "Core", "CoreUObject", "Engine", "InputCore" });
+		PublicDependencyModuleNames.AddRange(new string[] { "Core", "CoreUObject", "Engine", "InputCore", "EnhancedInput" });
 
 		PrivateDependencyModuleNames.AddRange(new string[] { });
 
@@ -21,6 +21,7 @@ public class ProjectDSFramework : ModuleRules
                 "ProjectDSFramework/Public/Character/Inventory",
                 "ProjectDSFramework/Public/Game",
                 "ProjectDSFramework/Public/Player",
+                "ProjectDSFramework/Public/UI",
             }
         );
 

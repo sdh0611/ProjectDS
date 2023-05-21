@@ -37,7 +37,7 @@ void ADSInventoryEntity::Discard()
 {
 	InternalDiscard();
 
-	OwnerCharacter.Reset();
+	OwnerCharacter = nullptr;
 }
 
 void ADSInventoryEntity::InternalDiscard()

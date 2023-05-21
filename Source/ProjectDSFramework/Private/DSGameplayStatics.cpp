@@ -4,6 +4,9 @@
 #include "DSGameplayStatics.h"
 #include "GameFramework/Actor.h"
 #include "Components/SkeletalMeshComponent.h"
+#include "EnhancedInputSubsystems.h"
+#include "GameFramework/PlayerController.h"
+
 
 bool UDSGameplayStatics::WasActorRecentlyRendered(AActor * CheckActor, float Tolerance)
 {
@@ -34,4 +37,14 @@ bool UDSGameplayStatics::WasActorRecentlyRendered(AActor * CheckActor, float Tol
 	}
 
 	return bRecentlyRendered;
+}
+
+IEnhancedInputSubsystemInterface* UDSGameplayStatics::GetEnhancedInputSubsystem(APlayerController* InPlayerController)
+{
+	if (IsValid(InPlayerController))
+	{
+		return ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(InPlayerController->GetLocalPlayer());
+	}
+
+	return nullptr;
 }

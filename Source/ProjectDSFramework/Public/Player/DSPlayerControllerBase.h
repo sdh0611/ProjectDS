@@ -6,6 +6,9 @@
 #include "GameFramework/PlayerController.h"
 #include "DSPlayerControllerBase.generated.h"
 
+class UInputMappingContext;
+class UDSInputSetting;
+
 /**
  * 
  */
@@ -35,6 +38,7 @@ public:
 
 protected:
 	// ~Begin ADSPlayerControllerBase Interface
+	void BindInputAction(UEnhancedInputComponent* InEnhancedInputComponent);
 	APawn* GetNearestTargetOnScreen();
 	void SetTarget(APawn* NewTarget);
 	void CheckTargetState();
@@ -46,6 +50,7 @@ public:
 	void LockOnTarget();
 	void ReleaseTarget();
 	void OnAttackHit();
+	void ApplyInputMappingContext(UInputMappingContext* InMappingContext, int32 InPriority = 0);
 	// ~End ADSPlayerControllerBase Interface
 
 protected:
@@ -53,9 +58,13 @@ protected:
 	DECLARE_DELEGATE_OneParam(FControllerActionInputDelegate, bool);
 	// }} Input binding delegates
 
+protected:
+	UPROPERTY(EditDefaultsOnly)
+	TObjectPtr<UDSInputSetting> ControllerInputSetting;
+
 private:
 	UPROPERTY(Transient)
-	class ADSPlayerCameraManager* DSPlayerCameraManager;
+	TObjectPtr<class ADSPlayerCameraManager> DSPlayerCameraManager;
 
 	UPROPERTY(EditAnywhere, Category = "LockOnTarget", Meta = (ClampMin = "0.0", ClampMax = "1.0"))
 	float TargetSearchBoxHalfWidthRate = 0.1f;

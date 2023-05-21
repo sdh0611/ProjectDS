@@ -63,7 +63,7 @@ public:
 
 protected:
 	UPROPERTY(VisibleDefaultsOnly)
-	UStaticMeshComponent* BodyMesh;
+	TObjectPtr<UStaticMeshComponent> BodyMesh;
 
 private:
 	UPROPERTY(Transient, ReplicatedUsing=OnRep_Equipped)

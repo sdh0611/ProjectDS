@@ -160,7 +160,7 @@ void ADSEquipment::InternalDiscard()
 
 void ADSEquipment::AttachToCharacter(const FName & AttackSocketName)
 {
-	if (OwnerCharacter.IsValid() && OwnerCharacter->GetMesh())
+	if (IsValid(OwnerCharacter) && OwnerCharacter->GetMesh())
 	{
 		AttachToComponent(OwnerCharacter->GetMesh(), FAttachmentTransformRules::SnapToTargetNotIncludingScale, AttackSocketName);
 	}
