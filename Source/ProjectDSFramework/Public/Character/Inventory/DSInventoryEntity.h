@@ -35,6 +35,6 @@ protected:
 
 protected:
 	UPROPERTY(Transient, Replicated)
-	TWeakObjectPtr<ADSCharacterBase> OwnerCharacter;
+	TObjectPtr<ADSCharacterBase> OwnerCharacter;
 
 };

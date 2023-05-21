@@ -6,6 +6,8 @@
 #include "Kismet/GameplayStatics.h"
 #include "DSGameplayStatics.generated.h"
 
+class IEnhancedInputSubsystemInterface;
+
 /**
  * 
  */
@@ -16,5 +18,5 @@ class PROJECTDSFRAMEWORK_API UDSGameplayStatics : public UGameplayStatics
 
 public:
 	static bool WasActorRecentlyRendered(AActor* CheckActor, float Tolerance = 0.2f);
-
+	static IEnhancedInputSubsystemInterface* GetEnhancedInputSubsystem(APlayerController* InPlayerController);
 };

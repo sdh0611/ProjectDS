@@ -52,10 +52,10 @@ struct FDSWeaponAnimData
 
 public:
 	UPROPERTY(EditDefaultsOnly)
-		UAnimMontage* WeaponAnim;
+	TObjectPtr<UAnimMontage> WeaponAnim;
 
 	UPROPERTY(EditDefaultsOnly)
-		float PlayRate;
+	float PlayRate;
 
 	FDSWeaponAnimData()
 		: WeaponAnim(nullptr)

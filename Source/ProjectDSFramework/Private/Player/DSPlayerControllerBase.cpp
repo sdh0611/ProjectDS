@@ -9,6 +9,8 @@
 #include "EngineUtils.h"
 #include "DrawDebugHelpers.h"
 #include "GameFramework/HUD.h"
+#include "InputMappingContext.h"
+#include "EnhancedInputSubsystems.h"
 //#include "DSHUD.h"
 
 
@@ -235,6 +237,15 @@ void ADSPlayerControllerBase::OnAttackHit()
 	if (DSPlayerCameraManager)
 	{
 		DSPlayerCameraManager->StartCameraShake(AttackHitCameraShakeClass);
+	}
+}
+
+void ADSPlayerControllerBase::ApplyInputMappingContext(UInputMappingContext* InMappingContext, int32 InPriority)
+{
+	IEnhancedInputSubsystemInterface* InputSubSystemInterface = UDSGameplayStatics::GetEnhancedInputSubsystem(this);
+	if (InputSubSystemInterface != nullptr)
+	{
+		InputSubSystemInterface->AddMappingContext(InMappingContext, InPriority);
 	}
 }
 

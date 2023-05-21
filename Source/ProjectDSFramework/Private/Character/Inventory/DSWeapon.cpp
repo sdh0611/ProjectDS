@@ -108,7 +108,7 @@ void ADSWeapon::InternalUnequipped()
 
 void ADSWeapon::WeaponArmed()
 {
-	if (OwnerCharacter.IsValid() && OwnerCharacter->GetMesh())
+	if (IsValid(OwnerCharacter) && OwnerCharacter->GetMesh())
 	{
 		if (EquipAnim)
 		{
@@ -119,7 +119,7 @@ void ADSWeapon::WeaponArmed()
 
 void ADSWeapon::WeaponUnarmed(bool bPlayAnim)
 {
-	if (OwnerCharacter.IsValid() && OwnerCharacter->GetMesh())
+	if (IsValid(OwnerCharacter) && OwnerCharacter->GetMesh())
 	{
 		if (bPlayAnim && UnequipAnim)
 		{

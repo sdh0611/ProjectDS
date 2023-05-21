@@ -21,7 +21,7 @@ struct FDSWeaponActionData
 	EWeaponActionInput WeaponActionInput;
 
 	UPROPERTY(EditDefaultsOnly, Instanced, Category = "WeaponAction")
-	UDSWeaponAction* WeaponAction;
+	TObjectPtr<UDSWeaponAction> WeaponAction;
 };
 
 
@@ -80,10 +80,10 @@ public:
 
 protected:
 	UPROPERTY(EditDefaultsOnly, Category = Anim)
-	UAnimMontage* EquipAnim;
+	TObjectPtr<UAnimMontage> EquipAnim;
 
 	UPROPERTY(EditDefaultsOnly, Category = Anim)
-	UAnimMontage* UnequipAnim;
+	TObjectPtr<UAnimMontage> UnequipAnim;
 
 	UPROPERTY(EditDefaultsOnly, Category = "WeaponAction")
 	TArray<FDSWeaponActionData> WeaponActions;
