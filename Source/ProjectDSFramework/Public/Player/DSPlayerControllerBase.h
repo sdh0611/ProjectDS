@@ -7,6 +7,7 @@
 #include "DSPlayerControllerBase.generated.h"
 
 class UInputMappingContext;
+class UDSInputSetting;
 
 /**
  * 
@@ -37,6 +38,7 @@ public:
 
 protected:
 	// ~Begin ADSPlayerControllerBase Interface
+	void BindInputAction(UEnhancedInputComponent* InEnhancedInputComponent);
 	APawn* GetNearestTargetOnScreen();
 	void SetTarget(APawn* NewTarget);
 	void CheckTargetState();
@@ -55,6 +57,10 @@ protected:
 	// {{ Input binding delegates
 	DECLARE_DELEGATE_OneParam(FControllerActionInputDelegate, bool);
 	// }} Input binding delegates
+
+protected:
+	UPROPERTY(EditDefaultsOnly)
+	TObjectPtr<UDSInputSetting> ControllerInputSetting;
 
 private:
 	UPROPERTY(Transient)

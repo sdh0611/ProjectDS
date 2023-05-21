@@ -11,6 +11,8 @@
 #include "GameFramework/HUD.h"
 #include "InputMappingContext.h"
 #include "EnhancedInputSubsystems.h"
+#include "EnhancedInputComponent.h"
+#include "Input/DSInputSetting.h"
 //#include "DSHUD.h"
 
 
@@ -42,10 +44,9 @@ void ADSPlayerControllerBase::SetupInputComponent()
 {
 	Super::SetupInputComponent();
 
-	if (InputComponent && InputComponent->IsRegistered())
-	{
-		InputComponent->BindAction(TEXT("LockOnTarget"), EInputEvent::IE_Pressed, this, &ADSPlayerControllerBase::LockOnTarget);
-	}
+	check(InputComponent && InputComponent->IsRegistered())
+
+	BindInputAction(Cast<UEnhancedInputComponent>(InputComponent));
 }
 
 void ADSPlayerControllerBase::SpawnPlayerCameraManager()
@@ -60,7 +61,6 @@ void ADSPlayerControllerBase::SpawnPlayerCameraManager()
 			DSPlayerCameraManager = SpawnedCameraManager;
 		}
 	}
-
 }
 
 void ADSPlayerControllerBase::TickActor(float DeltaTime, ELevelTick TickType, FActorTickFunction & ThisTickFunction)
@@ -70,6 +70,24 @@ void ADSPlayerControllerBase::TickActor(float DeltaTime, ELevelTick TickType, FA
 	if (IsTargeting())
 	{
 		CheckTargetState();
+	}
+}
+
+void ADSPlayerControllerBase::BindInputAction(UEnhancedInputComponent* InEnhancedInputComponent)
+{
+	if (InEnhancedInputComponent && IsValid(ControllerInputSetting) && ControllerInputSetting->GetInputMappingContextSet().IsValidSet())
+	{
+		ApplyInputMappingContext(ControllerInputSetting->GetInputMappingContextSet().InputMappingContext, ControllerInputSetting->GetInputMappingContextSet().Priority);
+
+#define BIND_CONTROLLER_ACTION_INPUT(InputFunctionName, TriggerEvent)	\
+			static const FName InputFunctionName##InputName = FName(TEXT(#InputFunctionName));	\
+			if (UInputAction* TargetInputAction = ControllerInputSetting->GetInputAction(InputFunctionName##InputName))	\
+			{\
+				InEnhancedInputComponent->BindAction(TargetInputAction, TriggerEvent, this, &ADSPlayerControllerBase::InputFunctionName);\
+			}
+
+		BIND_CONTROLLER_ACTION_INPUT(LockOnTarget, ETriggerEvent::Triggered)
+#undef BIND_CONTROLLER_ACTION_INPUT
 	}
 }
 

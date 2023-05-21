@@ -230,6 +230,7 @@ void ADSCharacterBase::BindInputAction(UEnhancedInputComponent* InInputComponent
 		BIND_CHARACTER_ACTION_INPUT(ToggleCrouch, ETriggerEvent::Triggered)
 		BIND_CHARACTER_ACTION_INPUT(Attack, ETriggerEvent::Triggered)
 		BIND_CHARACTER_ACTION_INPUT(AltAttack, ETriggerEvent::Triggered)
+		BIND_CHARACTER_ACTION_INPUT(ToggleWeapon, ETriggerEvent::Triggered)
 
 #undef BIND_CHARACTER_ACTION_INPUT
 	}
